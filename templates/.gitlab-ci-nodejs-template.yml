@@ -1,0 +1,32 @@
+image: node:latest
+
+variables:
+  BUILD_OPTS: ""
+  TEST_OPTS: ""
+#  POM_PATH: "./backend/user"
+  GIT_DEPTH: "3"
+
+cache:
+  paths:
+    - node_modules/
+    - dist/
+
+before_script:
+  -
+
+stages:
+ - build
+ - test
+# - deploy
+
+build:
+  stage: build
+  script:
+    - npm install
+    - npm run build $BUILD_OPTS
+
+test:
+  stage: test
+  script:
+    - npm run coverage $TEST_OPTS
+

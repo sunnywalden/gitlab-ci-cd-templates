@@ -3,7 +3,7 @@ image: maven:3.6.2-jdk-8
 variables:
   MAVEN_CLI_OPTS: "-s /root/.m2/settings.xml --batch-mode"
   MAVEN_OPTS: "-Dmaven.repo.local=/root/.m2/repository"
-  POM_PATH: "./backend/user"
+  POM_PATH: "backend/user"
   GIT_DEPTH: "3"
 
 cache:
@@ -79,3 +79,36 @@ stages:
  - build
  - test
 # - deploy
+
+.build:
+  stage: build
+  script:
+    - mvn clean -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
+  only:
+    refs:
+      - tech-4.2.0
+      - master
+      - merge_requests
+      - tags
+    changes:
+      - $POM_PATH/*
+
+
+.test:
+  stage: test
+  variables:
+    POM_PATH: "./backend/user"
+  script:
+    - mvn clean $MAVEN_CLI_OPTS -f $POM_PATH/pom.xml test
+    - cat $POM_PATH/target/site/jacoco/index.html
+  after_script:
+    - echo "AUto CI finished"
+  only:
+    changes:
+      - $POM_PATH/*
+    refs:
+      - tech-4.2.0
+      - merge_requests
+      - master
+      - tags
+  allow_failure: true

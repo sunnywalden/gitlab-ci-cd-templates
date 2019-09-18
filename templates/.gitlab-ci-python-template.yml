@@ -91,6 +91,6 @@ variables:
     refs:
       - renew
 
-.stages:
+stages:
   - test
   - build_image

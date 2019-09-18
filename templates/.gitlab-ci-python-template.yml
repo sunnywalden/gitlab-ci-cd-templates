@@ -1,7 +1,20 @@
 image: tezign.com:5000/docker-with-compose:stable
 services:
   - docker:dind
+  - rabbitmq
+  - redis
+  - mysql
 variables:
+  TZ: Asia/Shanghai
+  RABBITMQ_DEFAULT_USER: admin
+  RABBITMQ_DEFAULT_PASS: tezign0818
+  MYSQL_USER: tezign
+  MYSQL_PASSWORD: tezign0818
+  MYSQL_DATABASE: ops
+  MYSQL_ROOT_PASSWORD: tezign0818
+  MYSQL_HOST: ops_web_mysql
+  MYSQL_PORT: 3306
+  RUN_MODE: DEPLOY
   GIT_DEPTH: 3
   DOCKER_DRIVER: overlay2
 before_script:
@@ -25,31 +38,41 @@ before_script:
     }' >> /etc/docker/daemon.json
 
 
+init_mysql:
+  stage: test
+  image: mysql
+  before_script:
+    - mysql --version
+  script:
+    - mysql --user=root --password="$MYSQL_ROOT_PASSWORD" --host=mysql -e "CREATE DATABASE $MYSQL_DATABASE DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+
+init_redis:
+  stage: test
+  image: redis
+  script:
+    - sed -i 's/#requirepass/requirepass tezign0818/g' /etc/redis.conf
+
+init_rabbitmq:
+  stage: test
+  image: rabbitmq
+  script:
+    - rabbitmqctl add_user ops Ops_mq && rabbitmqctl set_user_tags ops administrator && rabbitmqctl add_vhost vhost && rabbitmqctl set_permissions -p vhost ops ".*" ".*" ".*"
+
+
 .test:
   image: python:3.7
   stage: test
-  services:
-    - name: rabbitmq:latest
-      alias: ops_web_rabbitmq
-    - name: redis:latest
-      alias: ops_web_redis
-    - name: mysql:latest
-      alias: ops_web_mysql
-#       command: [ '--default-authentication-plugin=mysql_native_password', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
-  variables:
-    TZ: Asia/Shanghai
-    RABBITMQ_DEFAULT_USER: admin
-    RABBITMQ_DEFAULT_PASS: tezign0818
-    MYSQL_USER: tezign
-    MYSQL_PASSWORD: tezign0818
-    MYSQL_DATABASE: ops
-    MYSQL_ROOT_PASSWORD: tezign0818
-    MYSQL_HOST: ops_web_mysql
-    MYSQL_PORT: 3306
+  before_script:
+    - pip install coverage
+    - python manage.py makemigrations && python manage.py migrate
+    - python manage.py runserver
   script:
     - coverage run manage.py test
     - coverage report --include=*/tests/test*
   allow_failure: true
+
+
 
 .build:
   stage: build
@@ -90,6 +113,32 @@ before_script:
     refs:
       - renew
 
-#stages:
-#  - test
-#  - build_image
+.staging:
+  stage: deploy
+  script:
+    - if [ $STAGING_SERVER_USER ];then SERVER_USER=$STAGING_SERVER_USER;fi
+    - if [ $STAGING_SERVER_PORT ];then SERVER_PORT=$STAGING_SERVER_PORT;fi
+    - if [ $STAGING_SERVER_PASS ];then SERVER_PASS=$STAGING_SERVER_PASS;fi
+    - ssh -o StrictHostKeyChecking=no -p $SERVER_PORT $SERVER_USER@$STAGING_SERVER_IP "uptime"
+    - if [ $SERVER_USER != "root" ];then sudo rsync -avz -e "ssh -p $SERVER_PORT" docker-compose.yml deploy.sh $SERVER_USER@$STAGING_SERVER_IP:/home/$SERVER_USER/;else rsync -avz -e "ssh -p $SERVER_PORT" docker-compose.yml deploy.sh $SERVER_USER@$STAGING_SERVER_IP:/root/;fi
+    - ssh -o StrictHostKeyChecking=no -p $SERVER_PORT -t $SERVER_USER@$STAGING_SERVER_IP "echo $SERVER_PASS | sudo -S /usr/local/bin/docker-compose pull;echo $SERVER_PASS | sudo -S /usr/local/bin/docker-compose up -d;echo $SERVER_PASS | sudo -S /bin/bash deploy.sh"
+  only:
+    - renew
+
+.production:
+  stage: deploy
+  script:
+    - if [ $PRODUCTION_SERVER_USER ];then SERVER_USER=$PRODUCTION_SERVER_USER;fi
+    - if [ $PRODUCTION_SERVER_PORT ];then SERVER_PORT=$PRODUCTION_SERVER_PORT;fi
+    - if [ $PRODUCTION_SERVER_PASS ];then SERVER_PASS=$PRODUCTION_SERVER_PASS;fi
+    - ssh -o StrictHostKeyChecking=no -p $SERVER_PORT $SERVER_USER@$PRODUCTION_SERVER_IP "uptime"
+    - if [ $SERVER_USER != "root" ];then sudo rsync -avz -e "ssh -p $SERVER_PORT" docker-compose.yml deploy.sh $SERVER_USER@$PRODUCTION_SERVER_IP:/home/$SERVER_USER/;else rsync -avz -e "ssh -p $SERVER_PORT" docker-compose.yml deploy.sh $SERVER_USER@$PRODUCTION_SERVER_IP:/root/;fi
+    - ssh -o StrictHostKeyChecking=no -p $SERVER_PORT -t $SERVER_USER@$PRODUCTION_SERVER_IP "echo $SERVER_PASS | sudo -S /usr/local/bin/docker-compose pull;echo $SERVER_PASS | sudo -S /usr/local/bin/docker-compose up -d;echo $SERVER_PASS | sudo -S /bin/bash deploy.sh"
+  when: manual
+  only:
+    - renew
+
+stages:
+  - test
+  - build
+  - deploy

@@ -90,6 +90,6 @@ before_script:
     refs:
       - renew
 
-stages:
-  - test
-  - build_image
+#stages:
+#  - test
+#  - build_image

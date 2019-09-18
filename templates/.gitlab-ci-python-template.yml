@@ -1,4 +1,3 @@
-image: tezign.com:5000/docker-with-compose:stable
 services:
   - docker:dind
   - rabbitmq
@@ -15,28 +14,6 @@ variables:
   MYSQL_HOST: ops_web_mysql
   MYSQL_PORT: 3306
   RUN_MODE: DEPLOY
-  GIT_DEPTH: 3
-  DOCKER_DRIVER: overlay2
-before_script:
-  - mkdir -p /root/.ssh
-  - echo "$DEPLOY_SSH_KEY" > /root/.ssh/id_rsa.pub
-  - echo "$DEPLOY_SSH_PRI_KEY" > /root/.ssh/id_rsa
-  - chmod -R 700 /root/.ssh
-  - mkdir -p /etc/docker/certs.d/tezign.com:5000
-  - |
-    echo "$REGISTRY_CERT" >> /etc/docker/certs.d/tezign.com:5000/registry.crt
-  - echo "10.28.204.14 tezign.com" >> /etc/hosts
-  - |
-    echo '{
-      "registry-mirrors": [
-        "https://15gvlmjd.mirror.aliyuncs.com"
-      ],
-      "insecure-registries": [
-        "tezign.com"
-      ],
-      "bip":"192.169.100.1/24"
-    }' >> /etc/docker/daemon.json
-
 
 init_mysql:
   stage: test
@@ -44,14 +21,15 @@ init_mysql:
   before_script:
     - mysql --version
   script:
-    - mysql --user=root --password="$MYSQL_ROOT_PASSWORD" --host=mysql -e "CREATE DATABASE $MYSQL_DATABASE DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    - mysql --user=root --password="$MYSQL_ROOT_PASSWORD" --host=127.0.0.1 -e "CREATE DATABASE $MYSQL_DATABASE DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 
 init_redis:
   stage: test
   image: redis
   script:
-    - sed -i 's/#requirepass/requirepass tezign0818/g' /etc/redis.conf
+    - echo 'requirepass tezign0818' > /etc/redis.conf
+    - kill -9 1
 
 init_rabbitmq:
   stage: test
@@ -113,6 +91,35 @@ init_rabbitmq:
     refs:
       - renew
 
+.docker:
+  image: tezign.com:5000/docker-with-compose:stable
+  services:
+    - docker:dind
+  variables:
+    TZ: Asia/Shanghai
+    RUN_MODE: DEPLOY
+    GIT_DEPTH: 3
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - mkdir -p /root/.ssh
+    - echo "$DEPLOY_SSH_KEY" > /root/.ssh/id_rsa.pub
+    - echo "$DEPLOY_SSH_PRI_KEY" > /root/.ssh/id_rsa
+    - chmod -R 700 /root/.ssh
+    - mkdir -p /etc/docker/certs.d/tezign.com:5000
+    - |
+      echo "$REGISTRY_CERT" >> /etc/docker/certs.d/tezign.com:5000/registry.crt
+    - echo "10.28.204.14 tezign.com" >> /etc/hosts
+    - |
+      echo '{
+        "registry-mirrors": [
+          "https://15gvlmjd.mirror.aliyuncs.com"
+        ],
+        "insecure-registries": [
+          "tezign.com"
+        ],
+        "bip":"192.169.100.1/24"
+      }' >> /etc/docker/daemon.json
+
 .staging:
   stage: deploy
   script:
@@ -124,6 +131,8 @@ init_rabbitmq:
     - ssh -o StrictHostKeyChecking=no -p $SERVER_PORT -t $SERVER_USER@$STAGING_SERVER_IP "echo $SERVER_PASS | sudo -S /usr/local/bin/docker-compose pull;echo $SERVER_PASS | sudo -S /usr/local/bin/docker-compose up -d;echo $SERVER_PASS | sudo -S /bin/bash deploy.sh"
   only:
     - renew
+  extends:
+    .docker
 
 .production:
   stage: deploy
@@ -137,6 +146,8 @@ init_rabbitmq:
   when: manual
   only:
     - renew
+  extends:
+    .docker
 
 stages:
   - test

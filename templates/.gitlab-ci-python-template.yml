@@ -21,23 +21,23 @@ init_mysql:
   before_script:
     - mysql --version
   script:
-    - mysql --user=root --password="$MYSQL_ROOT_PASSWORD" --host=127.0.0.1 -e "use $MYSQL_DATABASE; show tables;"
+    - mysql --user=root --password="$MYSQL_ROOT_PASSWORD" --host=mysql -e "use $MYSQL_DATABASE; show tables;"
 
 
 init_redis:
   stage: test
   image: redis
   script:
-    - echo 'requirepass tezign0818' > /etc/redis.conf
-    - kill -9 1
-    - redis-cli -a tezign0818 set hello world
-    - redis-cli -a tezign0818 get hello
+    - docker exec -d redis echo 'requirepass tezign0818' > /etc/redis.conf
+    - docker exec -d redis kill -9 1
+    - redis-cli -h redis -p 6379 -a tezign0818 set hello world
+    - redis-cli -h redis -p 6379 -a tezign0818 get hello
 
 init_rabbitmq:
   stage: test
   image: rabbitmq
   script:
-    - rabbitmqctl add_user ops Ops_mq && rabbitmqctl set_user_tags ops administrator && rabbitmqctl add_vhost vhost && rabbitmqctl set_permissions -p vhost ops ".*" ".*" ".*"
+    - docker exec -d rabbitmq rabbitmqctl add_user ops Ops_mq && rabbitmqctl set_user_tags ops administrator && rabbitmqctl add_vhost vhost && rabbitmqctl set_permissions -p vhost ops ".*" ".*" ".*"
 
 
 .test:

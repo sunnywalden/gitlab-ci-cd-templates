@@ -52,7 +52,7 @@ before_script:
   allow_failure: true
 
 .build:
-  stage: build_image
+  stage: build
   image:
     name: tezign.com:5000/kaniko-executor:debug
     entrypoint: [""]

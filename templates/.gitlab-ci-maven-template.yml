@@ -75,13 +75,10 @@ before_script:
 
           </settings>' > /root/.m2/settings.xml
 
-stages:
- - build
- - test
-# - deploy
-
 .build:
   stage: build
+  variables:
+    POM_PATH: "./backend/user"
   script:
     - mvn clean -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
   only:
@@ -112,3 +109,8 @@ stages:
       - master
       - tags
   allow_failure: true
+
+stages:
+ - build
+ - test
+# - deploy

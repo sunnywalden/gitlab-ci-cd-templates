@@ -110,7 +110,7 @@ before_script:
       - tags
   allow_failure: true
 
-stages:
+.stages:
  - build
  - test
 # - deploy

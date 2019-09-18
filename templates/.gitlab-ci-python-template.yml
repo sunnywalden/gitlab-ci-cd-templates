@@ -21,7 +21,7 @@ init_mysql:
   before_script:
     - mysql --version
   script:
-    - mysql --user=root --password="$MYSQL_ROOT_PASSWORD" --host=127.0.0.1 -e "CREATE DATABASE $MYSQL_DATABASE DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    - mysql --user=root --password="$MYSQL_ROOT_PASSWORD" --host=127.0.0.1 -e "use $MYSQL_DATABASE; show tables;"
 
 
 init_redis:
@@ -30,6 +30,8 @@ init_redis:
   script:
     - echo 'requirepass tezign0818' > /etc/redis.conf
     - kill -9 1
+    - redis-cli -a tezign0818 set hello world
+    - redis-cli -a tezign0818 get hello
 
 init_rabbitmq:
   stage: test
@@ -42,7 +44,7 @@ init_rabbitmq:
   image: python:3.7
   stage: test
   before_script:
-    - pip install coverage
+    - pip install -r requirements.txt
     - python manage.py makemigrations && python manage.py migrate
     - python manage.py runserver
   script:

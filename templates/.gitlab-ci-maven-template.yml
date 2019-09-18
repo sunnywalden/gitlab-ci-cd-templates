@@ -78,7 +78,7 @@ before_script:
 .build:
   stage: build
   variables:
-    POM_PATH: "./backend/user"
+    POM_PATH: "backend/user"
   script:
     - mvn clean -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
   only:
@@ -88,13 +88,13 @@ before_script:
       - merge_requests
       - tags
     changes:
-      - $POM_PATH/*
+      - backend/user/*
 
 
 .test:
   stage: test
   variables:
-    POM_PATH: "./backend/user"
+    POM_PATH: "backend/user"
   script:
     - mvn clean $MAVEN_CLI_OPTS -f $POM_PATH/pom.xml test
     - cat $POM_PATH/target/site/jacoco/index.html
@@ -102,7 +102,7 @@ before_script:
     - echo "AUto CI finished"
   only:
     changes:
-      - $POM_PATH/*
+      - backend/user/*
     refs:
       - tech-4.2.0
       - merge_requests

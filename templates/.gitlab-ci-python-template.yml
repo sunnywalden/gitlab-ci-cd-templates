@@ -1,5 +1,5 @@
 services:
-  - docker:dind
+#  - docker:dind
   - rabbitmq
   - redis
   - mysql
@@ -42,6 +42,8 @@ init_rabbitmq:
   image:
     name: tezign.com:5000/docker-with-compose:stable
     entrypoint: [""]
+  services:
+    - docker:dind
   script:
     - docker ps
     - docker exec -d rabbitmq rabbitmqctl add_user ops Ops_mq && rabbitmqctl set_user_tags ops administrator && rabbitmqctl add_vhost vhost && rabbitmqctl set_permissions -p vhost ops ".*" ".*" ".*"

@@ -1,30 +1,29 @@
-default:
-  image: tezign.com:5000/docker-with-compose:stable
-  services:
-    - docker:dind
-  before_script:
-    - mkdir -p /root/.ssh
-    - echo "$DEPLOY_SSH_KEY" > /root/.ssh/id_rsa.pub
-    - echo "$DEPLOY_SSH_PRI_KEY" > /root/.ssh/id_rsa
-    - chmod -R 700 /root/.ssh
-    - mkdir -p /etc/docker/certs.d/tezign.com:5000
-    - |
-      echo "$REGISTRY_CERT" >> /etc/docker/certs.d/tezign.com:5000/registry.crt
-    - echo "10.28.204.14 tezign.com" >> /etc/hosts
-    - |
-      echo '{
-        "registry-mirrors": [
-          "https://15gvlmjd.mirror.aliyuncs.com"
-        ],
-        "insecure-registries": [
-          "tezign.com"
-        ],
-        "bip":"192.169.100.1/24"
-      }' >> /etc/docker/daemon.json
-
+image: tezign.com:5000/docker-with-compose:stable
+services:
+  - docker:dind
 variables:
   GIT_DEPTH: 3
   DOCKER_DRIVER: overlay2
+before_script:
+  - mkdir -p /root/.ssh
+  - echo "$DEPLOY_SSH_KEY" > /root/.ssh/id_rsa.pub
+  - echo "$DEPLOY_SSH_PRI_KEY" > /root/.ssh/id_rsa
+  - chmod -R 700 /root/.ssh
+  - mkdir -p /etc/docker/certs.d/tezign.com:5000
+  - |
+    echo "$REGISTRY_CERT" >> /etc/docker/certs.d/tezign.com:5000/registry.crt
+  - echo "10.28.204.14 tezign.com" >> /etc/hosts
+  - |
+    echo '{
+      "registry-mirrors": [
+        "https://15gvlmjd.mirror.aliyuncs.com"
+      ],
+      "insecure-registries": [
+        "tezign.com"
+      ],
+      "bip":"192.169.100.1/24"
+    }' >> /etc/docker/daemon.json
+
 
 .test:
   image: python:3.7
@@ -33,9 +32,9 @@ variables:
     - name: rabbitmq:latest
       alias: ops_web_rabbitmq
     - name: redis:latest
-       alias: ops_web_redis
+      alias: ops_web_redis
     - name: mysql:latest
-       alias: ops_web_mysql
+      alias: ops_web_mysql
 #       command: [ '--default-authentication-plugin=mysql_native_password', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
   variables:
     TZ: Asia/Shanghai

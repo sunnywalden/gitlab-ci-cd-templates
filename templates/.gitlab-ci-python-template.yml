@@ -23,6 +23,7 @@ variables:
     - mkdir -p ~/.pip/
     - echo "[global]" > ~/.pip/pip.conf
     - echo "index-url = https://pypi.tuna.tsinghua.edu.cn/simple" >> ~/.pip/pip.conf
+    - source env/bin/activate
     - pip install --upgrade pip
     - pip install -r requirements.txt
     - cd /usr/local/python3/lib/python3.7/site-packages/django/db/backends/mysql/
@@ -34,7 +35,6 @@ variables:
     - cp sshkeys/* /root/.ssh/
     - python manage.py makemigrations && python manage.py migrate
     - nohup python manage.py runserver &
-    - pip install coverage
     - coverage run manage.py test
     - coverage report --include=*/tests/test*
   allow_failure: true

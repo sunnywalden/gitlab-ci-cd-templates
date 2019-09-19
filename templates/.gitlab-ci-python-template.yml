@@ -18,6 +18,7 @@ variables:
   image: tezign.com:5000/centos7-python3.7:latest
   stage: test
   before_script:
+    - work_dir=`pwd`
     - yum install -y openssl
     - mkdir -p ~/.pip/
     - echo "[global]" > ~/.pip/pip.conf
@@ -27,6 +28,7 @@ variables:
     - cd /usr/local/python3/lib/python3.7/site-packages/django/db/backends/mysql/
     - sed -i '35,36d' base.py
     - sed -i 's/query.decode/query.encode/g' operations.py
+    - cd $work_dir
     - python manage.py makemigrations && python manage.py migrate
     - python manage.py runserver
   script:

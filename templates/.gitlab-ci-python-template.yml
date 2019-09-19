@@ -30,8 +30,11 @@ variables:
     - sed -i 's/query.decode/query.encode/g' operations.py
     - cd $work_dir
   script:
+    - mkdir -p /root/.ssh/
+    - cp sshkeys/* /root/.ssh/
     - python manage.py makemigrations && python manage.py migrate
     - nohup python manage.py runserver &
+    - pip install coverage
     - coverage run manage.py test
     - coverage report --include=*/tests/test*
   allow_failure: true

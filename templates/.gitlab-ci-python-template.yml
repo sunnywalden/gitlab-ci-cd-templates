@@ -29,9 +29,9 @@ variables:
     - sed -i '35,36d' base.py
     - sed -i 's/query.decode/query.encode/g' operations.py
     - cd $work_dir
-    - python manage.py makemigrations && python manage.py migrate
-    - python manage.py runserver
   script:
+    - python manage.py makemigrations && python manage.py migrate
+    - nohup python manage.py runserver &
     - coverage run manage.py test
     - coverage report --include=*/tests/test*
   allow_failure: true

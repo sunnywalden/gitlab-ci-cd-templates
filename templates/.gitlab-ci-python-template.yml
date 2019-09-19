@@ -1,59 +1,32 @@
 services:
-#  - docker:dind
   - rabbitmq
   - redis
   - mysql
 variables:
   TZ: Asia/Shanghai
-  RABBITMQ_DEFAULT_USER: admin
-  RABBITMQ_DEFAULT_PASS: tezign0818
+  RABBITMQ_DEFAULT_USER: ops
+  RABBITMQ_DEFAULT_PASS: Ops_mq
   MYSQL_USER: tezign
   MYSQL_PASSWORD: tezign0818
   MYSQL_DATABASE: ops
   MYSQL_ROOT_PASSWORD: tezign0818
   MYSQL_HOST: ops_web_mysql
   MYSQL_PORT: 3306
-  RUN_MODE: DEPLOY
-
-init_mysql:
-  stage: test
-  image: mysql
-  before_script:
-    - mysql --version
-  script:
-    - mysql --user=root --password="$MYSQL_ROOT_PASSWORD" --host=mysql -e "use $MYSQL_DATABASE; show tables;"
-
-
-init_redis:
-  stage: test
-  image:
-    name: redis
-#    name: tezign.com:5000/docker-with-compose:stable
-#    entrypoint: [""]
-  script:
-#    - docker ps
-#    - docker exec -d redis echo 'requirepass tezign0818' > /etc/redis.conf
-#    - docker exec -d redis kill -9 1
-    - redis-cli -h redis -p 6379 -a tezign0818 set hello world
-    - redis-cli -h redis -p 6379 -a tezign0818 get hello
-
-init_rabbitmq:
-  stage: test
-  image:
-    name: tezign.com:5000/docker-with-compose:stable
-    entrypoint: [""]
-  services:
-    - docker:dind
-  script:
-    - docker ps
-    - docker exec -d rabbitmq rabbitmqctl add_user ops Ops_mq && rabbitmqctl set_user_tags ops administrator && rabbitmqctl add_vhost vhost && rabbitmqctl set_permissions -p vhost ops ".*" ".*" ".*"
-
+  RUN_MODE: TEST
 
 .test:
-  image: python:3.7
+  image: tezign.com:5000/centos7-python3.7:latest
   stage: test
   before_script:
+    - yum install -y openssl
+    - mkdir -p ~/.pip/
+    - echo "[global]" > ~/.pip/pip.conf
+    - echo "index-url = https://pypi.tuna.tsinghua.edu.cn/simple" >> ~/.pip/pip.conf
+    - pip install --upgrade pip
     - pip install -r requirements.txt
+    - cd /usr/local/python3/lib/python3.7/site-packages/django/db/backends/mysql/
+    - sed -i '35,36d' base.py
+    - sed -i 's/query.decode/query.encode/g' operations.py
     - python manage.py makemigrations && python manage.py migrate
     - python manage.py runserver
   script:

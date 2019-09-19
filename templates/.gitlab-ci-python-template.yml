@@ -23,7 +23,7 @@ variables:
     - mkdir -p ~/.pip/
     - echo "[global]" > ~/.pip/pip.conf
     - echo "index-url = https://pypi.tuna.tsinghua.edu.cn/simple" >> ~/.pip/pip.conf
-    - source env/bin/activate
+    - export PATH=/usr/local/python3/bin:$PATH
     - pip install --upgrade pip
     - pip install -r requirements.txt
     - cd /usr/local/python3/lib/python3.7/site-packages/django/db/backends/mysql/

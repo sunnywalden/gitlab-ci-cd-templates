@@ -1,0 +1,38 @@
+include:
+  project: 'tezign_dev/ci-templates'
+  ref: master
+  file: '/templates/.gitlab-ci-python-template.yml'
+
+
+test:
+  extends:
+    .test
+  script:
+    - mkdir -p /root/.ssh/
+    - cp sshkeys/* /root/.ssh/
+    - python manage.py makemigrations && python manage.py migrate
+    - nohup python manage.py runserver &
+    - coverage run manage.py test account
+    - coverage report --include=*/tests/test*
+
+
+build:
+  extends:
+    .build
+
+staging:
+  variables:
+    STAGING_SERVER_IP: $OPS_STAGING_SERVER_IP
+  extends:
+    .staging
+
+production:
+  variables:
+    PRODUCTION_SERVER_IP: $OPS_PRODUCTION_SERVER_IP
+    PRODUCTION_SERVER_USER: $OPS_PRODUCTION_SERVER_USER
+  extends:
+    .production
+
+
+
+

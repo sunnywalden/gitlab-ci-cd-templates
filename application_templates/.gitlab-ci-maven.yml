@@ -1,0 +1,66 @@
+include:
+  project: 'tezign_dev/ci-templates'
+  ref: master
+  file: '/templates/.gitlab-ci-maven-template.yml'
+
+build_user:
+  extends:
+    .build
+#  only:
+#    refs:
+#      - tech-4.2.0
+#      - master
+#      - merge_requests
+#      - tags
+#    changes:
+#      - backend/user/*
+
+build_message:
+  variables:
+    POM_PATH: "backend/message"
+  extends:
+    .build
+  only:
+#    refs:
+#      - tech-4.2.0
+#      - master
+#      - merge_requests
+#      - tags
+    changes:
+      - backend/message/*
+
+test_user:
+  extends: .test
+#  after_script:
+#    - echo "AUto CI finished"
+#  only:
+#    changes:
+#      - backend/user/*
+#    refs:
+#      - tech-4.2.0
+#      - merge_requests
+#      - master
+#      - tags
+
+test_message:
+  variables:
+    POM_PATH: "backend/message"
+  extends: .test
+#  after_script:
+#    - echo "AUto CI finished"
+  only:
+    changes:
+      - backend/message/*
+#    refs:
+#      - tech-4.2.0
+#      - merge_requests
+#      - master
+#      - tags
+#  allow_failure: true
+
+#deploy:
+#  stage: deploy
+#  script:
+#    - mvn $MAVEN_CLI_OPTS deploy
+#  only:
+#    - master

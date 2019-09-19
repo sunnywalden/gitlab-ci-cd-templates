@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="cda02ad5-0dd6-4719-a673-53ba3f05234d" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/.gitlab-ci-python-template.yml" beforeDir="false" afterPath="$PROJECT_DIR$/templates/.gitlab-ci-python-template.yml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -19,7 +18,7 @@
   <component name="PropertiesComponent">
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/templates" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/application_templates" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="settings.editor.selected.configurable" value="GitLabConfigurableProvider" />
@@ -53,7 +52,7 @@
       <updated>1568713412156</updated>
       <workItem from="1568713416745" duration="2670000" />
       <workItem from="1568717331071" duration="2407000" />
-      <workItem from="1568776204328" duration="17550000" />
+      <workItem from="1568776204328" duration="19646000" />
     </task>
     <servers />
   </component>

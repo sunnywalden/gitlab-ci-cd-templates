@@ -1,6 +1,7 @@
 image: maven:3.6.2-jdk-8
 
 variables:
+  REPO_DOMAIN: $REPO_DOMAIN
   MAVEN_CLI_OPTS: "-s /root/.m2/settings.xml --batch-mode"
   MAVEN_OPTS: "-Dmaven.repo.local=/root/.m2/repository"
   POM_PATH: "backend/user"
@@ -38,12 +39,12 @@ before_script:
                               </snapshots>
                               <id>central</id>
                               <name>libs-release</name>
-                              <url>http://10.28.204.14:9099/artifactory/libs-release</url>
+                              <url>http://$REPO_DOMAIN/artifactory/libs-release</url>
                           </repository>
                           <repository>
                               <id>snapshots</id>
                               <name>libs-snapshot</name>
-                              <url>http://10.28.204.14:9099/artifactory/libs-snapshot</url>
+                              <url>http://$REPO_DOMAIN/artifactory/libs-snapshot</url>
                               <snapshots>
                                   <enabled>true</enabled>
                                   <updatePolicy>always</updatePolicy>
@@ -57,13 +58,13 @@ before_script:
                               </snapshots>
                               <id>central</id>
                               <name>libs-release</name>
-                              <url>http://10.28.204.14:9099/artifactory/libs-release</url>
+                              <url>http://$REPO_DOMAIN/artifactory/libs-release</url>
                           </pluginRepository>
                           <pluginRepository>
                               <snapshots />
                               <id>snapshots</id>
                               <name>libs-snapshot</name>
-                              <url>http://10.28.204.14:9099/artifactory/libs-snapshot</url>
+                              <url>http://$REPO_DOMAIN/artifactory/libs-snapshot</url>
                           </pluginRepository>
                       </pluginRepositories>
                       <id>artifactory</id>

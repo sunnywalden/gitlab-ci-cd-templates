@@ -35,7 +35,7 @@ variables:
     - cp sshkeys/* /root/.ssh/
     - python manage.py makemigrations && python manage.py migrate
     - nohup python manage.py runserver &
-    - coverage run manage.py test
+    - coverage run --source='.' manage.py test --
     - coverage report --include=*/tests/test*
   coverage: '^TOTAL.+?(\d+\%)$'
   allow_failure: true

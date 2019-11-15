@@ -37,7 +37,7 @@ variables:
     - nohup python manage.py runserver &
     - coverage run --source='.' manage.py test --
     - coverage report --include=*/tests/test*
-  coverage: '^TOTAL.+?(\d+\%)$'
+  coverage: ^TOTAL.+?(\d+\%)$
   allow_failure: true
 
 

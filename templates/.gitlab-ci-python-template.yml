@@ -14,6 +14,13 @@ variables:
   MYSQL_PORT: 3306
   RUN_MODE: TEST
 
+cache:
+ paths:
+ # This took some trial and error to figure out.
+  - ~/.cache/pip/
+
+before_script:
+ - pip install -r requirements.txt
 
 .static_analysis:
   image: tezign.com:5000/centos7-python3.7:latest

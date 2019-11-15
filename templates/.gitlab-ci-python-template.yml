@@ -14,31 +14,6 @@ variables:
   MYSQL_PORT: 3306
   RUN_MODE: TEST
 
-.test:
-  image: tezign.com:5000/centos7-python3.7:latest
-  stage: test
-  before_script:
-    - work_dir=`pwd`
-    - yum install -y openssl
-    - mkdir -p ~/.pip/
-    - echo "[global]" > ~/.pip/pip.conf
-    - echo "index-url = https://pypi.tuna.tsinghua.edu.cn/simple" >> ~/.pip/pip.conf
-    - export PATH=/usr/local/python3/bin:$PATH
-    - pip install --upgrade pip
-    - pip install -r requirements.txt
-    - cd /usr/local/python3/lib/python3.7/site-packages/django/db/backends/mysql/
-    - sed -i '35,36d' base.py
-    - sed -i 's/query.decode/query.encode/g' operations.py
-    - cd $work_dir
-    - mkdir -p /root/.ssh/
-    - cp sshkeys/* /root/.ssh/
-    - python manage.py makemigrations && python manage.py migrate
-    - nohup python manage.py runserver &
-  script:
-    - coverage run --source='.' manage.py test --
-  after_script:
-    - coverage report
-  allow_failure: true
 
 .static_analysis:
   image: tezign.com:5000/centos7-python3.7:latest
@@ -88,6 +63,32 @@ variables:
   only:
     refs:
       - renew
+
+.test:
+  image: tezign.com:5000/centos7-python3.7:latest
+  stage: test
+  before_script:
+    - work_dir=`pwd`
+    - yum install -y openssl
+    - mkdir -p ~/.pip/
+    - echo "[global]" > ~/.pip/pip.conf
+    - echo "index-url = https://pypi.tuna.tsinghua.edu.cn/simple" >> ~/.pip/pip.conf
+    - export PATH=/usr/local/python3/bin:$PATH
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - cd /usr/local/python3/lib/python3.7/site-packages/django/db/backends/mysql/
+    - sed -i '35,36d' base.py
+    - sed -i 's/query.decode/query.encode/g' operations.py
+    - cd $work_dir
+    - mkdir -p /root/.ssh/
+    - cp sshkeys/* /root/.ssh/
+    - python manage.py makemigrations && python manage.py migrate
+    - nohup python manage.py runserver &
+  script:
+    - coverage run --source='.' manage.py test --
+  after_script:
+    - coverage report
+  allow_failure: true
 
 .docker:
   image: tezign.com:5000/docker-with-compose:stable
@@ -150,7 +151,7 @@ variables:
     .docker
 
 stages:
-  - test
   - static_analysis
+  - test
   - build
   - deploy

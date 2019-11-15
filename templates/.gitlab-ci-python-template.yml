@@ -30,17 +30,21 @@ variables:
     - sed -i '35,36d' base.py
     - sed -i 's/query.decode/query.encode/g' operations.py
     - cd $work_dir
-  script:
     - mkdir -p /root/.ssh/
     - cp sshkeys/* /root/.ssh/
     - python manage.py makemigrations && python manage.py migrate
     - nohup python manage.py runserver &
+  script:
     - coverage run --source='.' manage.py test --
-    - coverage report --include=*/tests/test*
+  after_script:
+    - coverage report
   allow_failure: true
 
 .static_analysis:
+  image: tezign.com:5000/centos7-python3.7:latest
   stage: static_analysis
+  before_script:
+    - pip install flake8
   script:
     - flake8 --max-line-length=120 *.py
 
@@ -76,9 +80,9 @@ variables:
         ],
         "bip":"192.168.0.1/24"
       }" >> /kaniko/.docker/daemon.json
-  script:
     - if [[ $CI_COMMIT_TAG ]];then echo "image $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG";fi
     - if [[ $CI_COMMIT_TAG == "" ]];then echo "$CI_REGISTRY_IMAGE:latest";fi
+  script:
     - if [[ $CI_COMMIT_TAG ]] && [[ $CI_COMMIT_TAG != "latest" ]];then /kaniko/executor --context $(pwd)/$CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --skip-tls-verify-registry $CI_REGISTRY;fi
     - /kaniko/executor --context $(pwd)/$CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:latest --skip-tls-verify-registry $CI_REGISTRY
   only:
@@ -116,11 +120,12 @@ variables:
 
 .staging:
   stage: deploy
-  script:
+  before_script:
     - if [ $STAGING_SERVER_USER ];then SERVER_USER=$STAGING_SERVER_USER;fi
     - if [ $STAGING_SERVER_PORT ];then SERVER_PORT=$STAGING_SERVER_PORT;fi
     - if [ $STAGING_SERVER_PASS ];then SERVER_PASS=$STAGING_SERVER_PASS;fi
     - ssh -o StrictHostKeyChecking=no -p $SERVER_PORT $SERVER_USER@$STAGING_SERVER_IP "uptime"
+  script:
     - if [ $SERVER_USER != "root" ];then sudo rsync -avz -e "ssh -p $SERVER_PORT" docker-compose.yml deploy.sh $SERVER_USER@$STAGING_SERVER_IP:/home/$SERVER_USER/;else rsync -avz -e "ssh -p $SERVER_PORT" docker-compose.yml deploy.sh $SERVER_USER@$STAGING_SERVER_IP:/root/;fi
     - ssh -o StrictHostKeyChecking=no -p $SERVER_PORT -t $SERVER_USER@$STAGING_SERVER_IP "echo $SERVER_PASS | sudo -S /usr/local/bin/docker-compose pull;echo $SERVER_PASS | sudo -S /usr/local/bin/docker-compose up -d;echo $SERVER_PASS | sudo -S /bin/bash deploy.sh"
   only:
@@ -130,11 +135,12 @@ variables:
 
 .production:
   stage: deploy
-  script:
+  before_script:
     - if [ $PRODUCTION_SERVER_USER ];then SERVER_USER=$PRODUCTION_SERVER_USER;fi
     - if [ $PRODUCTION_SERVER_PORT ];then SERVER_PORT=$PRODUCTION_SERVER_PORT;fi
     - if [ $PRODUCTION_SERVER_PASS ];then SERVER_PASS=$PRODUCTION_SERVER_PASS;fi
     - ssh -o StrictHostKeyChecking=no -p $SERVER_PORT $SERVER_USER@$PRODUCTION_SERVER_IP "uptime"
+  script:
     - if [ $SERVER_USER != "root" ];then sudo rsync -avz -e "ssh -p $SERVER_PORT" docker-compose.yml deploy.sh $SERVER_USER@$PRODUCTION_SERVER_IP:/home/$SERVER_USER/;else rsync -avz -e "ssh -p $SERVER_PORT" docker-compose.yml deploy.sh $SERVER_USER@$PRODUCTION_SERVER_IP:/root/;fi
     - ssh -o StrictHostKeyChecking=no -p $SERVER_PORT -t $SERVER_USER@$PRODUCTION_SERVER_IP "echo $SERVER_PASS | sudo -S /usr/local/bin/docker-compose pull;echo $SERVER_PASS | sudo -S /usr/local/bin/docker-compose up -d;echo $SERVER_PASS | sudo -S /bin/bash deploy.sh"
   when: manual

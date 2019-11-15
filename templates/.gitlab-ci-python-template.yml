@@ -39,7 +39,10 @@ variables:
     - coverage report --include=*/tests/test*
   allow_failure: true
 
-
+.static_analysis:
+  stage: static analysis
+  script:
+    - flake8 --max-line-length=120 *.py
 
 .build_image:
   stage: build
@@ -142,5 +145,6 @@ variables:
 
 stages:
   - test
+  - static_analysis
   - build
   - deploy

@@ -82,9 +82,9 @@ variables:
     - cd $work_dir
     - mkdir -p /root/.ssh/
     - cp sshkeys/* /root/.ssh/
+  script:
     - python manage.py makemigrations && python manage.py migrate
     - nohup python manage.py runserver &
-  script:
     - coverage run --source='.' manage.py test --
   after_script:
     - coverage report

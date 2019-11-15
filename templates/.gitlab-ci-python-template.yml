@@ -41,7 +41,7 @@ variables:
 
 
 
-.build:
+.build_image:
   stage: build
   image:
     name: tezign.com:5000/kaniko-executor:debug
@@ -63,7 +63,8 @@ variables:
       echo "$REGISTRY_CERT" >> /kaniko/ssl/certs/ca-certificates.crt
     - echo "10.28.204.14 tezign.com" >> /etc/hosts
     - |
-      echo '{
+      echo "
+      {
         "registry-mirrors": [
         "https://15gvlmjd.mirror.aliyuncs.com"
         ],
@@ -71,7 +72,7 @@ variables:
           "tezign.com"
         ],
         "bip":"192.168.0.1/24"
-      }' >> /kaniko/.docker/daemon.json
+      }" >> /kaniko/.docker/daemon.json
   script:
     - if [[ $CI_COMMIT_TAG ]];then echo "image $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG";fi
     - if [[ $CI_COMMIT_TAG == "" ]];then echo "$CI_REGISTRY_IMAGE:latest";fi

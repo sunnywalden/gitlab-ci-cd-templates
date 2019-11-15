@@ -23,10 +23,9 @@ before_script:
  - pip install -r requirements.txt
 
 .static_analysis:
-  image: tezign.com:5000/centos7-python3.7:latest
   stage: static_analysis
-  before_script:
-    - pip install flake8
+  image:
+    name: tezign.com:5000/centos7-python3.7:latest
   script:
     - flake8 --max-line-length=120 *.py
 

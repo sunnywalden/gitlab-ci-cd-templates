@@ -40,7 +40,7 @@ variables:
   allow_failure: true
 
 .static_analysis:
-  stage: static analysis
+  stage: static_analysis
   script:
     - flake8 --max-line-length=120 *.py
 

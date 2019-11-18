@@ -21,6 +21,8 @@ cache:
 
 before_script:
  - pip install -r requirements.txt
+ - ln -s /usr/local/python3/bin/flake8 /usr/bin/flake8
+ - ln -s /usr/local/python3/bin/coverage /usr/bin/coverage
 
 .static_analysis:
   stage: static_analysis
@@ -28,6 +30,7 @@ before_script:
     name: tezign.com:5000/centos7-python3.7:latest
   script:
     - flake8 --max-line-length=120 *.py
+  allow_failure: true
 
 .build_image:
   stage: build

@@ -75,24 +75,9 @@ before_script:
 
           </settings>' > /root/.m2/settings.xml
 
-.build:
-  stage: build
-  variables:
-    POM_PATH: "backend/user"
-  script:
-    - mvn clean -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
-  only:
-    refs:
-      - tech-4.2.0
-      - master
-      - merge_requests
-      - tags
-    changes:
-      - backend/user/*
 
-
-.test:
-  stage: test
+.unit_test:
+  stage: unit_test
   variables:
     POM_PATH: "backend/user"
   script:
@@ -110,7 +95,102 @@ before_script:
       - tags
   allow_failure: true
 
+
+.static_analysis:
+  stage: static_analysis
+  script:
+    - flake8 --max-line-length=120 *.py
+  allow_failure: true
+
+
+.build:
+  stage: build
+  variables:
+    POM_PATH: "backend/user"
+  script:
+    - mvn clean -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
+  only:
+    refs:
+      - tech-4.2.0
+      - master
+      - merge_requests
+      - tags
+    changes:
+      - backend/user/*
+
+.build_image:
+  stage: build_image
+  image:
+    name: tezign.com:5000/kaniko-executor:debug
+    entrypoint: [""]
+  before_script:
+    - |
+      echo "
+      {
+        "auths":
+          {
+            "$CI_REGISTRY":
+              {
+                "username": "$CI_REGISTRY_USER",
+                "password": "$CI_REGISTRY_PASSWORD"
+              }
+          },
+      }" > /kaniko/.docker/config.json
+    - |
+      echo "$REGISTRY_CERT" >> /kaniko/ssl/certs/ca-certificates.crt
+    - echo "10.28.204.14 tezign.com" >> /etc/hosts
+    - |
+      echo "
+      {
+        "registry-mirrors": [
+        "https://15gvlmjd.mirror.aliyuncs.com"
+        ],
+        "insecure-registries": [
+          "tezign.com"
+        ],
+        "bip":"192.168.0.1/24"
+      }" >> /kaniko/.docker/daemon.json
+    - if [[ $CI_COMMIT_TAG ]];then echo "image $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG";fi
+    - if [[ $CI_COMMIT_TAG == "" ]];then echo "$CI_REGISTRY_IMAGE:latest";fi
+  script:
+    - if [[ $CI_COMMIT_TAG ]] && [[ $CI_COMMIT_TAG != "latest" ]];then /kaniko/executor --context $(pwd)/$CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --skip-tls-verify-registry $CI_REGISTRY;fi
+    - /kaniko/executor --context $(pwd)/$CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:latest --skip-tls-verify-registry $CI_REGISTRY
+  only:
+    refs:
+      - master
+
+.docker:
+  image: tezign.com:5000/docker-with-compose:stable
+  services:
+    - docker:dind
+  variables:
+    TZ: Asia/Shanghai
+    RUN_MODE: DEPLOY
+    GIT_DEPTH: 3
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - mkdir -p /root/.ssh
+    - echo "$DEPLOY_SSH_KEY" > /root/.ssh/id_rsa.pub
+    - echo "$DEPLOY_SSH_PRI_KEY" > /root/.ssh/id_rsa
+    - chmod -R 700 /root/.ssh
+    - mkdir -p /etc/docker/certs.d/tezign.com:5000
+    - |
+      echo "$REGISTRY_CERT" >> /etc/docker/certs.d/tezign.com:5000/registry.crt
+    - echo "10.28.204.14 tezign.com" >> /etc/hosts
+    - |
+      echo '{
+        "registry-mirrors": [
+          "https://15gvlmjd.mirror.aliyuncs.com"
+        ],
+        "insecure-registries": [
+          "tezign.com"
+        ],
+        "bip":"192.169.100.1/24"
+      }' >> /etc/docker/daemon.json
+
 stages:
+ - unit_test
+ - static_analysis
  - build
- - test
+ - build_image
 # - deploy

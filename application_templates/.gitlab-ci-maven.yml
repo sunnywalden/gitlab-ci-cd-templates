@@ -3,6 +3,7 @@ include:
   ref: master
   file: '/templates/.gitlab-ci-maven-template.yml'
 
+
 build_user:
   extends:
     .build
@@ -29,8 +30,9 @@ build_message:
     changes:
       - backend/message/*
 
+
 test_user:
-  extends: .test
+  extends: .unit_test
 #  after_script:
 #    - echo "AUto CI finished"
 #  only:
@@ -45,7 +47,7 @@ test_user:
 test_message:
   variables:
     POM_PATH: "backend/message"
-  extends: .test
+  extends: .unit_test
 #  after_script:
 #    - echo "AUto CI finished"
   only:
@@ -57,6 +59,21 @@ test_message:
 #      - master
 #      - tags
 #  allow_failure: true
+
+
+.user_static_analysis:
+  stage: static_analysis
+  script:
+    - flake8 --max-line-length=120 *.py
+  allow_failure: true
+
+
+.message_static_analysis:
+  stage: static_analysis
+  script:
+    - flake8 --max-line-length=120 *.py
+  allow_failure: true
+
 
 #deploy:
 #  stage: deploy

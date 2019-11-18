@@ -17,12 +17,38 @@ variables:
 cache:
  paths:
  # This took some trial and error to figure out.
-  - ~/.cache/pip/
+   - ~/.cache/pip/
 
 before_script:
  - pip install -r requirements.txt
  - ln -s /usr/local/python3/bin/flake8 /usr/bin/flake8
  - ln -s /usr/local/python3/bin/coverage /usr/bin/coverage
+
+.unit_test:
+  image: tezign.com:5000/centos7-python3.7:latest
+  stage: unit_test
+  before_script:
+    - work_dir=`pwd`
+    - yum install -y openssl
+    - mkdir -p ~/.pip/
+    - echo "[global]" > ~/.pip/pip.conf
+    - echo "index-url = https://pypi.tuna.tsinghua.edu.cn/simple" >> ~/.pip/pip.conf
+    - export PATH=/usr/local/python3/bin:$PATH
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - cd /usr/local/python3/lib/python3.7/site-packages/django/db/backends/mysql/
+    - sed -i '35,36d' base.py
+    - sed -i 's/query.decode/query.encode/g' operations.py
+    - cd $work_dir
+    - mkdir -p /root/.ssh/
+    - cp sshkeys/* /root/.ssh/
+  script:
+    - python manage.py makemigrations && python manage.py migrate
+    - nohup python manage.py runserver &
+    - coverage run --source='.' manage.py test --
+  after_script:
+    - coverage report
+  allow_failure: true
 
 .static_analysis:
   stage: static_analysis
@@ -72,32 +98,6 @@ before_script:
   only:
     refs:
       - renew
-
-.test:
-  image: tezign.com:5000/centos7-python3.7:latest
-  stage: test
-  before_script:
-    - work_dir=`pwd`
-    - yum install -y openssl
-    - mkdir -p ~/.pip/
-    - echo "[global]" > ~/.pip/pip.conf
-    - echo "index-url = https://pypi.tuna.tsinghua.edu.cn/simple" >> ~/.pip/pip.conf
-    - export PATH=/usr/local/python3/bin:$PATH
-    - pip install --upgrade pip
-    - pip install -r requirements.txt
-    - cd /usr/local/python3/lib/python3.7/site-packages/django/db/backends/mysql/
-    - sed -i '35,36d' base.py
-    - sed -i 's/query.decode/query.encode/g' operations.py
-    - cd $work_dir
-    - mkdir -p /root/.ssh/
-    - cp sshkeys/* /root/.ssh/
-  script:
-    - python manage.py makemigrations && python manage.py migrate
-    - nohup python manage.py runserver &
-    - coverage run --source='.' manage.py test --
-  after_script:
-    - coverage report
-  allow_failure: true
 
 .docker:
   image: tezign.com:5000/docker-with-compose:stable
@@ -160,7 +160,7 @@ before_script:
     .docker
 
 stages:
+  - unit_test
   - static_analysis
-  - test
   - build
   - deploy

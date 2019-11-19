@@ -1,8 +1,13 @@
+include:
+  template: SAST.gitlab-ci.yml
+
 services:
   - rabbitmq
   - redis
   - mysql
 variables:
+  SAST_GOSEC_LEVEL: 2
+  CI_DEBUG_TRACE: "true"
   TZ: Asia/Shanghai
   RABBITMQ_DEFAULT_USER: $RABBITMQ_DEFAULT_USER
   RABBITMQ_DEFAULT_PASS: $RABBITMQ_DEFAULT_PASS
@@ -17,13 +22,11 @@ variables:
 cache:
  paths:
  # This took some trial and error to figure out.
-   - .cache/pip/
-   - .sonar/cache
+   - ~/.cache/pip/
+   - ~/.sonar/cache/
 
-before_script:
- - pip install -r requirements.txt
- - ln -s /usr/local/python3/bin/flake8 /usr/bin/flake8
- - ln -s /usr/local/python3/bin/coverage /usr/bin/coverage
+#before_script:
+# - pip install -r requirements.txt
 
 .unit_test:
   image: tezign.com:5000/centos7-python3.7:latest
@@ -44,35 +47,36 @@ before_script:
     - mkdir -p /root/.ssh/
     - cp sshkeys/* /root/.ssh/
   script:
+    - pip install -r requirements.txt
     - python manage.py makemigrations && python manage.py migrate
     - nohup python manage.py runserver &
+    - ln -s /usr/local/python3/bin/coverage /usr/bin/coverage
     - coverage run --source='.' manage.py test --
   after_script:
     - coverage report
   allow_failure: true
 
-#.sonar_static_analysis:
-#  stage: static_analysis
-#  image:
-#    name: tezign.com:5000/centos7-python3.7:latest
-#  before_script:
-#    - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip -o /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
-#    - unzip /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
-#    - echo "sonar.host.url=$SONAR_EXTERNAL_URL" >> /opt/sonar-scanner-cli-4.2.0.1873-linux/conf/sonar-scanner.properties
-#    - export PATH=/opt/sonar-scanner-cli-4.2.0.1873-linux/bin:$PATH
-#  script:
-#    - |
-#      sonar-scanner \
-#      -Dsonar.projectKey=ops-django \
-#      -Dsonar.sources=. \
-#      -Dsonar.host.url=$SONAR_EXTERNAL_URL \
-#      -Dsonar.login=$SONAR_LOGIN
-#  allow_failure: true
-
 .sonar_static_analysis:
   stage: static_analysis
-  image:
-    name: sonarsource/sonar-scanner-cli:latest
+  image: tezign.com:5000/centos7-python3.7:latest
+  before_script:
+    - yum install unzip wget -y
+    - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip -o /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
+    - unzip /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
+    - echo "sonar.host.url=$SONAR_EXTERNAL_URL" >> /opt/sonar-scanner-cli-4.2.0.1873-linux/conf/sonar-scanner.properties
+    - export PATH=/opt/sonar-scanner-cli-4.2.0.1873-linux/bin:$PATH
+  script:
+    - |
+      sonar-scanner \
+      -Dsonar.projectKey=ops-django \
+      -Dsonar.sources=. \
+      -Dsonar.host.url=$SONAR_EXTERNAL_URL \
+      -Dsonar.login=$SONAR_LOGIN
+  allow_failure: true
+
+.sonar_check:
+  stage: static_analysis
+  image: sonarsource/sonar-scanner-cli:latest
     entrypoint: [""]
   variables:
     SONAR_TOKEN: $SONAR_LOGIN
@@ -86,10 +90,13 @@ before_script:
 
 .static_analysis:
   stage: static_analysis
-  image:
-    name: tezign.com:5000/centos7-python3.7:latest
+  image: tezign.com:5000/centos7-python3.7:latest
+  before_script:
+    - pip install -r requirements.txt
+    - ln -s /usr/local/python3/bin/flake8 /usr/bin/flake8
   script:
     - flake8 --max-line-length=120 *.py
+#  coverage: '/^TOTAL.*\s+(\d+\%)$/'
   allow_failure: true
 
 
@@ -198,5 +205,6 @@ before_script:
 stages:
   - unit_test
   - static_analysis
+  - test
   - build_image
   - deploy

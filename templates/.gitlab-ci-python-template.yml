@@ -94,7 +94,7 @@ before_script:
 
 
 .build_image:
-  stage: build
+  stage: build_image
   image:
     name: tezign.com:5000/kaniko-executor:debug
     entrypoint: [""]
@@ -197,5 +197,5 @@ before_script:
 stages:
   - unit_test
   - static_analysis
-  - build
+  - build_image
   - deploy

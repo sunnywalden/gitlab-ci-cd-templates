@@ -79,6 +79,7 @@ before_script:
     SONAR_HOST_URL: $SONAR_URL
   script:
     - sonar-scanner
+    - if [ $? -eq 0 ]; then echo "sonarqube code-publish over.";fi
   only:
     - merge_requests
     - branches

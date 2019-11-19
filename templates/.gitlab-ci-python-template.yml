@@ -20,10 +20,10 @@ variables:
   RUN_MODE: TEST
 
 cache:
- paths:
+  paths:
  # This took some trial and error to figure out.
-   - ~/.cache/pip/
-   - ~/.sonar/cache/
+    - ~/.cache/pip/
+    - ~/.sonar/cache/
 
 #before_script:
 # - pip install -r requirements.txt

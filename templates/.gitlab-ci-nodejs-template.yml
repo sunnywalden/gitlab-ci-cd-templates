@@ -14,10 +14,22 @@ cache:
 before_script:
   -
 
-stages:
- - build
- - test
-# - deploy
+sonarqube_preview_feature_job:
+  stage: static_analysis
+  before_script:
+    - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip -o /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
+    - unzip /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
+    - echo "sonar.host.url=$SONAR_EXTERNAL_URL" >> /opt/sonar-scanner-cli-4.2.0.1873-linux/conf/sonar-scanner.properties
+    - export PATH=/opt/sonar-scanner-cli-4.2.0.1873-linux/bin:$PATH
+  script:
+    - npm run sonar-scanner -- -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_LOGIN -Dsonar.analysis.mode=preview -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME -Dsonar.gitlab.project_id=$CI_PROJECT_ID
+
+
+
+test:
+  stage: unit_test
+  script:
+    - npm run coverage $TEST_OPTS
 
 build:
   stage: build
@@ -25,8 +37,10 @@ build:
     - npm install
     - npm run build $BUILD_OPTS
 
-test:
-  stage: test
-  script:
-    - npm run coverage $TEST_OPTS
+stages:
+ - build
+ - test
+# - deploy
+
+
 

@@ -17,7 +17,8 @@ variables:
 cache:
  paths:
  # This took some trial and error to figure out.
-   - ~/.cache/pip/
+   - .cache/pip/
+   - .sonar/cache
 
 before_script:
  - pip install -r requirements.txt
@@ -50,6 +51,24 @@ before_script:
     - coverage report
   allow_failure: true
 
+.sonar_static_analysis:
+  stage: static_analysis
+  image:
+    name: tezign.com:5000/centos7-python3.7:latest
+  before_script:
+    - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip -o /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
+    - unzip /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
+    - echo "sonar.host.url=$SONAR_EXTERNAL_URL" >> /opt/sonar-scanner-cli-4.2.0.1873-linux/conf/sonar-scanner.properties
+    - export PATH=/opt/sonar-scanner-cli-4.2.0.1873-linux/bin:$PATH
+  script:
+    - |
+      sonar-scanner \
+      -Dsonar.projectKey=ops-django \
+      -Dsonar.sources=. \
+      -Dsonar.host.url=$SONAR_EXTERNAL_URL \
+      -Dsonar.login=$SONAR_LOGIN
+  allow_failure: true
+
 .static_analysis:
   stage: static_analysis
   image:
@@ -57,6 +76,8 @@ before_script:
   script:
     - flake8 --max-line-length=120 *.py
   allow_failure: true
+
+
 
 .build_image:
   stage: build

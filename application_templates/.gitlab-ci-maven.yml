@@ -7,14 +7,14 @@ include:
 build_user:
   extends:
     .build
-#  only:
+  only:
 #    refs:
 #      - tech-4.2.0
 #      - master
 #      - merge_requests
 #      - tags
-#    changes:
-#      - backend/user/*
+    changes:
+      - backend/user/*
 
 build_message:
   variables:
@@ -62,17 +62,22 @@ test_message:
 
 
 .user_static_analysis:
-  stage: static_analysis
+  extends:
+    .sonarqube_job
   script:
     - flake8 --max-line-length=120 *.py
   allow_failure: true
+
+.sonarqube_job
 
 
 .message_static_analysis:
-  stage: static_analysis
+  extends:
+    .sonarqube_job
   script:
     - flake8 --max-line-length=120 *.py
   allow_failure: true
+
 
 
 #deploy:
@@ -81,3 +86,32 @@ test_message:
 #    - mvn $MAVEN_CLI_OPTS deploy
 #  only:
 #    - master
+build_user_image:
+  variables:
+    POM_PATH: "backend/user"
+    CI_PROJECT_DIR: "backend/user"
+  extends:
+    .build_image
+  only:
+#    refs:
+#      - tech-4.2.0
+#      - master
+#      - merge_requests
+#      - tags
+    changes:
+      - backend/user/*
+
+build_message_image:
+  variables:
+    POM_PATH: "backend/message"
+    CI_PROJECT_DIR: "backend/message"
+  extends:
+    .build_image
+  only:
+#    refs:
+#      - tech-4.2.0
+#      - master
+#      - merge_requests
+#      - tags
+    changes:
+      - backend/message/*

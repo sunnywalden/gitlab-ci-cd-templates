@@ -76,6 +76,21 @@ before_script:
           </settings>' > /root/.m2/settings.xml
 
 
+.build:
+  stage: build
+  variables:
+    POM_PATH: "backend/user"
+  script:
+    - mvn clean -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
+  only:
+    refs:
+      - tech-4.2.0
+      - master
+      - merge_requests
+      - tags
+    changes:
+      - backend/user/*
+
 .unit_test:
   stage: unit_test
   variables:
@@ -96,33 +111,47 @@ before_script:
   allow_failure: true
 
 
-sonarqube_master_job:
-  stage: unit_test
-  only:
-    - master
-  before_script:
-    - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip -o /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
-    - unzip /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
-    - echo "sonar.host.url=$SONAR_EXTERNAL_URL" >> /opt/sonar-scanner-cli-4.2.0.1873-linux/conf/sonar-scanner.properties
-    - export PATH=/opt/sonar-scanner-cli-4.2.0.1873-linux/bin:$PATH
-  script:
-    - mvn --batch-mode verify sonar:sonar -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_LOGIN -Dsonar.gitlab.project_id=$CI_PROJECT_PATH -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
+#.sonarqube_master_job:
+#  stage: unit_test
+#  only:
+#    - master
+#  before_script:
+#    - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip -o /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
+#    - unzip /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
+#    - echo "sonar.host.url=$SONAR_EXTERNAL_URL" >> /opt/sonar-scanner-cli-4.2.0.1873-linux/conf/sonar-scanner.properties
+#    - export PATH=/opt/sonar-scanner-cli-4.2.0.1873-linux/bin:$PATH
+#  script:
+#    - mvn --batch-mode verify sonar:sonar -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_LOGIN -Dsonar.gitlab.project_id=$CI_PROJECT_PATH -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
+#  allow_failure: true
+
+.sonarqube_job:
+  stage: static_analysis
+  image: maven:latest
+  variables:
+    SONAR_TOKEN: $SONAR_LOGIN
+    SONAR_HOST_URL: $SONAR_URL
+  sonarqube-scan:
+    script:
+      - mvn verify sonar:sonar
+    only:
+      - merge_requests
+      - branches
   allow_failure: true
 
-sonarqube_preview_feature_job:
-  stage: unit_test
-  only:
-    - /^feature\/*/
-  before_script:
-    - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip -o /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
-    - unzip /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
-    - echo "sonar.host.url=$SONAR_EXTERNAL_URL" >> /opt/sonar-scanner-cli-4.2.0.1873-linux/conf/sonar-scanner.properties
-    - export PATH=/opt/sonar-scanner-cli-4.2.0.1873-linux/bin:$PATH
-  script:
-    - git checkout origin/master
-    - git merge $CI_COMMIT_SHA --no-commit --no-ff
-    - mvn --batch-mode verify sonar:sonar -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_LOGIN -Dsonar.analysis.mode=preview -Dsonar.gitlab.project_id=$CI_PROJECT_PATH -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
-  allow_failure: true
+#.sonarqube_preview_feature_job:
+#  stage: unit_test
+#  only:
+#    - /^feature\/*/
+#  before_script:
+#    - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip -o /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
+#    - unzip /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
+#    - echo "sonar.host.url=$SONAR_EXTERNAL_URL" >> /opt/sonar-scanner-cli-4.2.0.1873-linux/conf/sonar-scanner.properties
+#    - export PATH=/opt/sonar-scanner-cli-4.2.0.1873-linux/bin:$PATH
+#  script:
+#    - git checkout origin/master
+#    - git merge $CI_COMMIT_SHA --no-commit --no-ff
+#    - mvn --batch-mode verify sonar:sonar -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_LOGIN -Dsonar.analysis.mode=preview -Dsonar.gitlab.project_id=$CI_PROJECT_PATH -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
+#  allow_failure: true
 
 .static_analysis:
   stage: static_analysis
@@ -130,21 +159,6 @@ sonarqube_preview_feature_job:
     - flake8 --max-line-length=120 *.py
   allow_failure: true
 
-
-.build:
-  stage: build
-  variables:
-    POM_PATH: "backend/user"
-  script:
-    - mvn clean -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
-  only:
-    refs:
-      - tech-4.2.0
-      - master
-      - merge_requests
-      - tags
-    changes:
-      - backend/user/*
 
 .build_image:
   stage: build_image

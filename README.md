@@ -1,5 +1,7 @@
 # gitlab-ci-cd-templates
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](http://github.com/hhyo/archery/blob/master/LICENSE)
+
 ## 版本依赖
 
 gitlab community edition  12.2.5

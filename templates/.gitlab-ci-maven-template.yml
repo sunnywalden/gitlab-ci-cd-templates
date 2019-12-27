@@ -81,7 +81,8 @@ before_script:
   variables:
     POM_PATH: "backend/user"
   script:
-    - mvn clean -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
+    # - mvn clean -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
+    - mvn -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
   only:
     refs:
       - tech-4.2.0
@@ -96,7 +97,8 @@ before_script:
   variables:
     POM_PATH: "backend/user"
   script:
-    - mvn clean $MAVEN_CLI_OPTS -f $POM_PATH/pom.xml test
+    # - mvn clean $MAVEN_CLI_OPTS -f $POM_PATH/pom.xml test
+    - mvn $MAVEN_CLI_OPTS -f $POM_PATH/pom.xml test
     - cat $POM_PATH/target/site/jacoco/index.html
   after_script:
     - echo "AUto CI finished"

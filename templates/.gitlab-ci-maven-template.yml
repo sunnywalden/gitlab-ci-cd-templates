@@ -6,6 +6,7 @@ variables:
   POM_PATH: "backend/user"
   GIT_CLEAN_FLAGS: "none"
   GIT_DEPTH: "3"
+  PRO_NAME: "$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"
 
 cache:
   paths:

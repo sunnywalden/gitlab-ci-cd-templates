@@ -108,6 +108,7 @@ before_script:
   stage: unit_test
   variables:
     POM_PATH: "backend/user"
+    APP_NAME: 
   script:
     # - mvn clean $MAVEN_CLI_OPTS -f $POM_PATH/pom.xml test
     - mvn $MAVEN_CLI_OPTS -f $POM_PATH/pom.xml test
@@ -123,6 +124,19 @@ before_script:
       - master
       - tags
   allow_failure: true
+
+
+.pages:
+  stage: unit_test
+  dependencies:
+    - .unit_test
+  script:
+      #    - rm -rf public/*
+      - cp -r $POM_PATH/target/site/jacoco/* public/$POM_PATH/
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
 
 
 #.sonarqube_master_job:

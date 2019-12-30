@@ -129,8 +129,8 @@ before_script:
   stage: unit_test
   variables:
     POM_PATH: "backend/user"
-  dependencies:
-    - .unit_test
+#   dependencies:
+#     - .unit_test
   script:
     - cp -r $POM_PATH/target/site/jacoco/* public/$POM_PATH/
   only:
@@ -140,6 +140,7 @@ before_script:
     paths:
       - public
     expire_in: 30 days
+  allow_failure: true
 
 
 #.sonarqube_master_job:

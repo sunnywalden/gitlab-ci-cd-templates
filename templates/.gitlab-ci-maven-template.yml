@@ -103,7 +103,7 @@ before_script:
       - merge_requests
       - tags
     changes:
-      - $POM_PATH/*
+      - backend/user/*
 
 .unit_test:
   stage: unit_test
@@ -124,7 +124,7 @@ before_script:
     # - echo "AUto CI finished"
   only:
     changes:
-      - $POM_PATH/*
+      - backend/user/*
     refs:
       - tech-4.2.0
       - merge_requests
@@ -144,7 +144,7 @@ before_script:
     - cp -r $POM_PATH/target/site/jacoco/* public/$POM_PATH/
   only:
     changes:
-      - $POM_PATH/*
+      - backend/user/*
   artifacts:
     paths:
       - public
@@ -169,11 +169,12 @@ before_script:
   stage: static_analysis
   image: maven:latest
   variables:
+    POM_PATH: "backend/user"
     SONAR_TOKEN: $SONAR_LOGIN
     SONAR_HOST_URL: $SONAR_URL
   sonarqube-scan:
     script:
-      - mvn verify sonar:sonar
+      - mvn -f $POM_PATH/pom.xml verify sonar:sonar
     only:
       - merge_requests
       - branches

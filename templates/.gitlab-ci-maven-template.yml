@@ -7,6 +7,8 @@ variables:
   GIT_CLEAN_FLAGS: "none"
   GIT_DEPTH: "3"
   PRO_NAME: "$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"
+  SONAR_TOKEN: "$SONAR_LOGIN"
+  SONAR_HOST_URL: "$SONAR_URL"
 
 cache:
   paths:
@@ -170,8 +172,6 @@ before_script:
   image: maven:latest
   variables:
     POM_PATH: "backend/user"
-    SONAR_TOKEN: $SONAR_LOGIN
-    SONAR_HOST_URL: $SONAR_URL
   sonarqube-scan:
     script:
       - mvn -f $POM_PATH/pom.xml verify sonar:sonar

@@ -13,6 +13,16 @@ cache:
     - $POM_PATH/target/
 
 before_script:
+  - |
+    echo 'deb http://mirrors.163.com/debian/ stretch main non-free contrib
+          deb http://mirrors.163.com/debian/ stretch-updates main non-free contrib
+          deb http://mirrors.163.com/debian/ stretch-backports main non-free contrib
+          deb-src http://mirrors.163.com/debian/ stretch main non-free contrib
+          deb-src http://mirrors.163.com/debian/ stretch-updates main non-free contrib
+          deb-src http://mirrors.163.com/debian/ stretch-backports main non-free contrib
+          deb http://mirrors.163.com/debian-security/ stretch/updates main non-free contrib
+          deb-src http://mirrors.163.com/debian-security/ stretch/updates main non-free contrib' > /etc/apt/sources.list
+  - apt update
   - pwd
   - |
     echo '<?xml version="1.0" encoding="UTF-8"?>

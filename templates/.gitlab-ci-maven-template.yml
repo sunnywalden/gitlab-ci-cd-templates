@@ -23,6 +23,7 @@ before_script:
           deb http://mirrors.163.com/debian-security/ stretch/updates main non-free contrib
           deb-src http://mirrors.163.com/debian-security/ stretch/updates main non-free contrib' > /etc/apt/sources.list
   - apt update
+  - apt-get install -y mysql-client
   - pwd
   - |
     echo '<?xml version="1.0" encoding="UTF-8"?>

@@ -102,7 +102,7 @@ before_script:
       - merge_requests
       - tags
     changes:
-      - backend/user/*
+      - $POM_PATH/*
 
 .unit_test:
   stage: unit_test
@@ -116,7 +116,7 @@ before_script:
     - echo "AUto CI finished"
   only:
     changes:
-      - backend/user/*
+      - $POM_PATH/*
     refs:
       - tech-4.2.0
       - merge_requests
@@ -133,6 +133,9 @@ before_script:
     - .unit_test
   script:
     - cp -r $POM_PATH/target/site/jacoco/* public/$POM_PATH/
+  only:
+    changes:
+      - $POM_PATH/*
   artifacts:
     paths:
       - public

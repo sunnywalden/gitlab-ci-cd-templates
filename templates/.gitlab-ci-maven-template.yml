@@ -132,6 +132,7 @@ before_script:
 #   dependencies:
 #     - .unit_test
   script:
+    - mkdir -p public/$POM_PATH/
     - cp -r $POM_PATH/target/site/jacoco/* public/$POM_PATH/
   only:
     changes:

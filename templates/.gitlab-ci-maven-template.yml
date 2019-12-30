@@ -108,12 +108,19 @@ before_script:
   stage: unit_test
   variables:
     POM_PATH: "backend/user"
+    APP_NAME: "user"
+    PRO_NAME: "$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"
+  before_script:
   script:
-    # - mvn clean $MAVEN_CLI_OPTS -f $POM_PATH/pom.xml test
     - mvn $MAVEN_CLI_OPTS -f $POM_PATH/pom.xml test
     - cat $POM_PATH/target/site/jacoco/index.html
   after_script:
-    - echo "AUto CI finished"
+    - cat $POM_PATH/target/site/jacoco/index.html|grep -Eo "Total.*?([0-9]{1,3})%"|grep -Eo "([0-9]{1,3})%"|grep -Eo "([0-9]{1,3})"|head -n 1
+    - COVER_VAL=`cat $POM_PATH/target/site/jacoco/index.html|grep -Eo "Total.*?([0-9]{1,3})%"|grep -Eo "([0-9]{1,3})%"|grep -Eo "([0-9]{1,3})"| head -n 1`
+    - echo "coverage value is $COVER_VAL"
+    - echo "debug sql:\n insert into coverage_report (app_name,project_path,branch_or_tag,commit_id,ci_job_id,coverage_value) values(\"$APP_NAME\", \"$PRO_NAME\", \"$CI_COMMIT_REF_NAME\", \"$CI_COMMIT_SHORT_SHA\", \"$CI_JOB_ID\", $COVER_VAL);commit;"
+    - mysql -h $MYSQL_HOST -u $MYSQL_USER -D $MYSQL_DATABASE -p$MYSQL_PASSWORD -e "insert into coverage_report (app_name,project_path,branch_or_tag,commit_id,ci_job_id,coverage_value) values(\"$APP_NAME\", \"$PRO_NAME\", \"$CI_COMMIT_REF_NAME\", \"$CI_COMMIT_SHORT_SHA\", \"$CI_JOB_ID\", $COVER_VAL);commit;"
+    # - echo "AUto CI finished"
   only:
     changes:
       - $POM_PATH/*

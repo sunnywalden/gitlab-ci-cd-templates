@@ -9,6 +9,7 @@ variables:
   PRO_NAME: "$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"
   SONAR_TOKEN: "$SONAR_LOGIN"
   SONAR_HOST_URL: "$SONAR_URL"
+  SONAR_NAME: "$SONAR_NAME"
 
 cache:
   paths:
@@ -174,7 +175,8 @@ before_script:
     POM_PATH: "backend/user"
   sonarqube-scan:
     script:
-      - mvn -f $POM_PATH/pom.xml verify sonar:sonar
+    #   - mvn -f verify sonar:sonar
+      - mvn -f $POM_PATH/pom.xml -Dsonar.projectKey=$SONAR_NAME -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN sonar:sonar
     only:
       - merge_requests
       - branches

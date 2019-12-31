@@ -92,6 +92,26 @@ before_script:
           </settings>' > /root/.m2/settings.xml
 
 
+.sonarqube_job:
+  stage: static_analysis
+  image: maven:latest
+  variables:
+    POM_PATH: "backend/user"
+  sonarqube-scan:
+    script:
+    #   - mvn -f verify sonar:sonar
+      - mvn -f $POM_PATH/pom.xml -Dsonar.projectKey=$SONAR_NAME -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN verify sonar:sonar
+    only:
+      - merge_requests
+      - branches
+  allow_failure: true
+
+.static_analysis:
+  stage: static_analysis
+  script:
+    - flake8 --max-line-length=120 *.py
+  allow_failure: true
+  
 .build:
   stage: build
   variables:
@@ -168,20 +188,6 @@ before_script:
 #    - mvn --batch-mode verify sonar:sonar -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_LOGIN -Dsonar.gitlab.project_id=$CI_PROJECT_PATH -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
 #  allow_failure: true
 
-.sonarqube_job:
-  stage: static_analysis
-  image: maven:latest
-  variables:
-    POM_PATH: "backend/user"
-  sonarqube-scan:
-    script:
-    #   - mvn -f verify sonar:sonar
-      - mvn -f $POM_PATH/pom.xml -Dsonar.projectKey=$SONAR_NAME -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN sonar:sonar
-    only:
-      - merge_requests
-      - branches
-  allow_failure: true
-
 #.sonarqube_preview_feature_job:
 #  stage: unit_test
 #  only:
@@ -196,12 +202,6 @@ before_script:
 #    - git merge $CI_COMMIT_SHA --no-commit --no-ff
 #    - mvn --batch-mode verify sonar:sonar -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_LOGIN -Dsonar.analysis.mode=preview -Dsonar.gitlab.project_id=$CI_PROJECT_PATH -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
 #  allow_failure: true
-
-.static_analysis:
-  stage: static_analysis
-  script:
-    - flake8 --max-line-length=120 *.py
-  allow_failure: true
 
 
 .build_image:

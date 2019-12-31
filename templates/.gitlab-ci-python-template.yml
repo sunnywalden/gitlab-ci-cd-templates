@@ -31,7 +31,7 @@ cache:
 # - pip install -r requirements.txt
 
 .unit_test:
-  image: tezign.com:5000/centos7-python3.7:latest
+  image: sunnywalden.com:5000/centos7-python3.7:latest
   stage: unit_test
   before_script:
     - work_dir=`pwd`
@@ -60,7 +60,7 @@ cache:
 
 .sonar_static_analysis:
   stage: static_analysis
-  image: tezign.com:5000/centos7-python3.7:latest
+  image: sunnywalden.com:5000/centos7-python3.7:latest
   before_script:
     - yum install unzip wget -y
     - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip -o /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
@@ -93,7 +93,7 @@ cache:
 
 .static_analysis:
   stage: static_analysis
-  image: tezign.com:5000/centos7-python3.7:latest
+  image: sunnywalden.com:5000/centos7-python3.7:latest
   before_script:
     - pip install -r requirements.txt
     - ln -s /usr/local/python3/bin/flake8 /usr/bin/flake8
@@ -107,7 +107,7 @@ cache:
 .build_image:
   stage: build_image
   image:
-    name: tezign.com:5000/kaniko-executor:debug
+    name: sunnywalden.com:5000/kaniko-executor:debug
     entrypoint: [""]
   before_script:
     - |
@@ -124,7 +124,7 @@ cache:
       }" > /kaniko/.docker/config.json
     - |
       echo "$REGISTRY_CERT" >> /kaniko/ssl/certs/ca-certificates.crt
-    - echo "10.28.204.14 tezign.com" >> /etc/hosts
+    - echo "10.28.204.14 sunnywalden.com" >> /etc/hosts
     - |
       echo "
       {
@@ -132,7 +132,7 @@ cache:
         "https://15gvlmjd.mirror.aliyuncs.com"
         ],
         "insecure-registries": [
-          "tezign.com"
+          "sunnywalden.com"
         ],
         "bip":"192.168.0.1/24"
       }" >> /kaniko/.docker/daemon.json
@@ -146,7 +146,7 @@ cache:
       - renew
 
 .docker:
-  image: tezign.com:5000/docker-with-compose:stable
+  image: sunnywalden.com:5000/docker-with-compose:stable
   services:
     - docker:dind
   variables:
@@ -159,17 +159,17 @@ cache:
     - echo "$DEPLOY_SSH_KEY" > /root/.ssh/id_rsa.pub
     - echo "$DEPLOY_SSH_PRI_KEY" > /root/.ssh/id_rsa
     - chmod -R 700 /root/.ssh
-    - mkdir -p /etc/docker/certs.d/tezign.com:5000
+    - mkdir -p /etc/docker/certs.d/sunnywalden.com:5000
     - |
-      echo "$REGISTRY_CERT" >> /etc/docker/certs.d/tezign.com:5000/registry.crt
-    - echo "10.28.204.14 tezign.com" >> /etc/hosts
+      echo "$REGISTRY_CERT" >> /etc/docker/certs.d/sunnywalden.com:5000/registry.crt
+    - echo "10.28.204.14 sunnywalden.com" >> /etc/hosts
     - |
       echo '{
         "registry-mirrors": [
           "https://15gvlmjd.mirror.aliyuncs.com"
         ],
         "insecure-registries": [
-          "tezign.com"
+          "sunnywalden.com"
         ],
         "bip":"192.169.100.1/24"
       }' >> /etc/docker/daemon.json

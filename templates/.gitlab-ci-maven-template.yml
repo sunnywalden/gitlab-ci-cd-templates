@@ -177,7 +177,7 @@ before_script:
 .build_image:
   stage: build_image
   image:
-    name: tezign.com:5000/kaniko-executor:debug
+    name: sunnywalden/kaniko-executor:debug
     entrypoint: [""]
   before_script:
     - |
@@ -194,7 +194,7 @@ before_script:
       }" > /kaniko/.docker/config.json
     - |
       echo "$REGISTRY_CERT" >> /kaniko/ssl/certs/ca-certificates.crt
-    - echo "10.28.204.14 tezign.com" >> /etc/hosts
+    - echo "10.28.204.14 sunnywalden.com" >> /etc/hosts
     - |
       echo "
       {
@@ -202,7 +202,7 @@ before_script:
         "https://15gvlmjd.mirror.aliyuncs.com"
         ],
         "insecure-registries": [
-          "tezign.com"
+          "sunnywalden.com"
         ],
         "bip":"192.168.0.1/24"
       }" >> /kaniko/.docker/daemon.json
@@ -216,7 +216,7 @@ before_script:
       - master
 
 .docker:
-  image: tezign.com:5000/docker-with-compose:stable
+  image: sunnywalden/docker-with-compose:stable
   services:
     - docker:dind
   variables:
@@ -229,17 +229,17 @@ before_script:
     - echo "$DEPLOY_SSH_KEY" > /root/.ssh/id_rsa.pub
     - echo "$DEPLOY_SSH_PRI_KEY" > /root/.ssh/id_rsa
     - chmod -R 700 /root/.ssh
-    - mkdir -p /etc/docker/certs.d/tezign.com:5000
+    - mkdir -p /etc/docker/certs.d/sunnywalden
     - |
-      echo "$REGISTRY_CERT" >> /etc/docker/certs.d/tezign.com:5000/registry.crt
-    - echo "10.28.204.14 tezign.com" >> /etc/hosts
+      echo "$REGISTRY_CERT" >> /etc/docker/certs.d/sunnywalden/registry.crt
+    - echo "10.28.204.14 sunnywalden.com" >> /etc/hosts
     - |
       echo '{
         "registry-mirrors": [
           "https://15gvlmjd.mirror.aliyuncs.com"
         ],
         "insecure-registries": [
-          "tezign.com"
+          "sunnywalden.com"
         ],
         "bip":"192.169.100.1/24"
       }' >> /etc/docker/daemon.json

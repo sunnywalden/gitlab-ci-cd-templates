@@ -275,8 +275,8 @@ before_script:
       }' >> /etc/docker/daemon.json
 
 stages:
+ - static_analysis
  - build
  - unit_test
- - static_analysis
  - build_image
 # - deploy

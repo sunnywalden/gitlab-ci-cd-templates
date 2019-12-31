@@ -3,20 +3,60 @@ include:
   ref: master
   file: '/templates/.gitlab-ci-python-template.yml'
 
-
-test:
+unit_test:
   extends:
-    .test
+    .unit_test
   script:
-    - mkdir -p /root/.ssh/
-    - cp sshkeys/* /root/.ssh/
     - python manage.py makemigrations && python manage.py migrate
     - nohup python manage.py runserver &
-    - coverage run manage.py test account
-    - coverage report --include=*/tests/test*
+    - pip install requests
+#    - ln -s /usr/local/python3/bin/coverage /usr/bin/coverage
+    - coverage run --source='account,ali_oss,qiniu_oss' manage.py test --
+  after_script:
+    - pip install coverage
+    - ln -s /usr/local/python3/bin/coverage /usr/bin/coverage
+    - coverage report
+  allow_failure: true
 
 
-build:
+static_analysis:
+  stage: static_analysis
+#  image: python:3.7
+  image: tezign.com:5000/centos7-python3.7:latest
+#  before_script:
+#    - pip install flake8
+#    - ln -s /usr/local/python3/bin/flake8 /usr/bin/flake8
+  script:
+    - pip install flake8
+    - ln -s /usr/local/python3/bin/flake8 /usr/bin/flake8
+    - flake8 --max-line-length=120 account/*.py
+    - flake8 --max-line-length=120 ali_oss/*.py
+    - flake8 --max-line-length=120 cmdb/*.py
+  allow_failure: true
+
+
+sonarqube-check:
+  extends:
+    .sonar_static_analysis
+  variables:
+    SONAR_TOKEN: $SONAR_LOGIN
+    SONAR_HOST_URL: $SONAR_URL
+  only:
+      - merge_requests
+      - branches
+
+sonar-check:
+  extends:
+    .sonar_check
+  variables:
+    SONAR_TOKEN: $SONAR_LOGIN
+    SONAR_HOST_URL: $SONAR_URL
+  only:
+      - merge_requests
+      - branches
+
+
+build_image:
   extends:
     .build_image
 
@@ -25,6 +65,7 @@ staging:
     STAGING_SERVER_IP: $OPS_STAGING_SERVER_IP
   extends:
     .staging
+  when: manual
 
 production:
   variables:
@@ -32,7 +73,3 @@ production:
     PRODUCTION_SERVER_USER: $OPS_PRODUCTION_SERVER_USER
   extends:
     .production
-
-
-
-

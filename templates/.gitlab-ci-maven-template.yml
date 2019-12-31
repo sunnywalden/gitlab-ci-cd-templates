@@ -174,36 +174,6 @@ before_script:
     expire_in: 30 days
   allow_failure: true
 
-
-#.sonarqube_master_job:
-#  stage: unit_test
-#  only:
-#    - master
-#  before_script:
-#    - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip -o /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
-#    - unzip /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
-#    - echo "sonar.host.url=$SONAR_EXTERNAL_URL" >> /opt/sonar-scanner-cli-4.2.0.1873-linux/conf/sonar-scanner.properties
-#    - export PATH=/opt/sonar-scanner-cli-4.2.0.1873-linux/bin:$PATH
-#  script:
-#    - mvn --batch-mode verify sonar:sonar -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_LOGIN -Dsonar.gitlab.project_id=$CI_PROJECT_PATH -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
-#  allow_failure: true
-
-#.sonarqube_preview_feature_job:
-#  stage: unit_test
-#  only:
-#    - /^feature\/*/
-#  before_script:
-#    - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip -o /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
-#    - unzip /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
-#    - echo "sonar.host.url=$SONAR_EXTERNAL_URL" >> /opt/sonar-scanner-cli-4.2.0.1873-linux/conf/sonar-scanner.properties
-#    - export PATH=/opt/sonar-scanner-cli-4.2.0.1873-linux/bin:$PATH
-#  script:
-#    - git checkout origin/master
-#    - git merge $CI_COMMIT_SHA --no-commit --no-ff
-#    - mvn --batch-mode verify sonar:sonar -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_LOGIN -Dsonar.analysis.mode=preview -Dsonar.gitlab.project_id=$CI_PROJECT_PATH -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
-#  allow_failure: true
-
-
 .build_image:
   stage: build_image
   image:

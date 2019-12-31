@@ -3,115 +3,98 @@ include:
   ref: master
   file: '/templates/.gitlab-ci-maven-template.yml'
 
+variables:
+  GIT_DEPTH: "1"
+  GIT_CLEAN_FLAGS: "none"
+  MYSQL_HOST: "127.0.0.1"
+  MYSQL_DATABASE: "unit_test"
+  MYSQL_USER: "test"
+  MYSQL_PASSWORD: "123456"
 
-build_user:
+static_portfolio:
+  variables:
+    POM_PATH: "backend/portfolio"
+  extends:
+    .sonarqube_job
+  only:
+    refs:
+      - tech-unit-test
+    changes:
+      - backend/portfolio/*
+
+static_top2:
+  variables:
+    POM_PATH: "backend/top"
+  extends:
+    .sonarqube_job
+  only:
+    refs:
+      - tech-unit-test
+    changes:
+      - backend/top/*
+
+build_portfolio:
+  variables:
+    POM_PATH: "backend/portfolio"
   extends:
     .build
   only:
-#    refs:
-#      - tech-4.2.0
-#      - master
-#      - merge_requests
-#      - tags
+    refs:
+      - tech-unit-test
     changes:
-      - backend/user/*
+      - backend/portfolio/*
 
-build_message:
+build_top2:
   variables:
-    POM_PATH: "backend/message"
+    POM_PATH: "backend/top"
   extends:
     .build
   only:
-#    refs:
-#      - tech-4.2.0
-#      - master
-#      - merge_requests
-#      - tags
+    refs:
+      - tech-unit-test
     changes:
-      - backend/message/*
+      - backend/top/*
 
-
-test_user:
+test_portfolio:
+  variables:
+    POM_PATH: "backend/portfolio"
+    APP_NAME: "portfolio"
   extends: .unit_test
-#  after_script:
-#    - echo "AUto CI finished"
-#  only:
-#    changes:
-#      - backend/user/*
-#    refs:
-#      - tech-4.2.0
-#      - merge_requests
-#      - master
-#      - tags
+  only:
+    changes:
+      - backend/portfolio/*
+    refs:
+      - tech-unit-test
 
-test_message:
+test_top2:
   variables:
-    POM_PATH: "backend/message"
+    POM_PATH: "backend/top"
+    APP_NAME: "top"
   extends: .unit_test
-#  after_script:
-#    - echo "AUto CI finished"
   only:
     changes:
-      - backend/message/*
-#    refs:
-#      - tech-4.2.0
-#      - merge_requests
-#      - master
-#      - tags
-#  allow_failure: true
+      - backend/top/*
+    refs:
+      - tech-unit-test
 
-
-.user_static_analysis:
-  extends:
-    .sonarqube_job
-  script:
-    - flake8 --max-line-length=120 *.py
-  allow_failure: true
-
-.sonarqube_job
-
-
-.message_static_analysis:
-  extends:
-    .sonarqube_job
-  script:
-    - flake8 --max-line-length=120 *.py
-  allow_failure: true
-
-
-
-#deploy:
-#  stage: deploy
-#  script:
-#    - mvn $MAVEN_CLI_OPTS deploy
-#  only:
-#    - master
-build_user_image:
+pages_portfolio:
   variables:
-    POM_PATH: "backend/user"
-    CI_PROJECT_DIR: "backend/user"
-  extends:
-    .build_image
+    POM_PATH: "backend/portfolio"
+  extends: .pages
   only:
-#    refs:
-#      - tech-4.2.0
-#      - master
-#      - merge_requests
-#      - tags
     changes:
-      - backend/user/*
+      - backend/portfolio/*
+    refs:
+      - tech-unit-test
 
-build_message_image:
+pages_top2:
   variables:
-    POM_PATH: "backend/message"
-    CI_PROJECT_DIR: "backend/message"
-  extends:
-    .build_image
+    POM_PATH: "backend/top"
+  extends: .pages
   only:
-#    refs:
-#      - tech-4.2.0
-#      - master
-#      - merge_requests
-#      - tags
     changes:
-      - backend/message/*
+      - backend/top/*
+    refs:
+      - tech-unit-test
+
+

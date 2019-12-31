@@ -6,6 +6,8 @@ services:
   - redis
   - mysql
 variables:
+  GIT_CLEAN_FLAGS: "none"
+  GIT_DEPTH: "3"
   SAST_GOSEC_LEVEL: 2
   CI_DEBUG_TRACE: "true"
   TZ: Asia/Shanghai

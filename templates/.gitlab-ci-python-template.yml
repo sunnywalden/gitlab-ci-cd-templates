@@ -1,8 +1,15 @@
+#include:
+#  template: SAST.gitlab-ci.yml
+
 services:
   - rabbitmq
   - redis
   - mysql
 variables:
+  GIT_CLEAN_FLAGS: "none"
+  GIT_DEPTH: "3"
+  SAST_GOSEC_LEVEL: 2
+  CI_DEBUG_TRACE: "true"
   TZ: Asia/Shanghai
   RABBITMQ_DEFAULT_USER: $RABBITMQ_DEFAULT_USER
   RABBITMQ_DEFAULT_PASS: $RABBITMQ_DEFAULT_PASS
@@ -14,9 +21,18 @@ variables:
   MYSQL_PORT: 3306
   RUN_MODE: TEST
 
-.test:
-  image: sunnywalden/centos7-python3.7:latest
-  stage: test
+cache:
+  paths:
+ # This took some trial and error to figure out.
+    - ~/.cache/pip/
+    - ~/.sonar/cache/
+
+#before_script:
+# - pip install -r requirements.txt
+
+.unit_test:
+  image: sunnywalden.com:5000/centos7-python3.7:latest
+  stage: unit_test
   before_script:
     - work_dir=`pwd`
     - yum install -y openssl
@@ -30,19 +46,66 @@ variables:
     - sed -i '35,36d' base.py
     - sed -i 's/query.decode/query.encode/g' operations.py
     - cd $work_dir
-  script:
     - mkdir -p /root/.ssh/
     - cp sshkeys/* /root/.ssh/
+  script:
+    - pip install -r requirements.txt
     - python manage.py makemigrations && python manage.py migrate
     - nohup python manage.py runserver &
-    - coverage run manage.py test
-    - coverage report --include=*/tests/test*
+    - ln -s /usr/local/python3/bin/coverage /usr/bin/coverage
+    - coverage run --source='.' manage.py test --
+  after_script:
+    - coverage report
+  allow_failure: true
+
+.sonar_static_analysis:
+  stage: static_analysis
+  image: sunnywalden.com:5000/centos7-python3.7:latest
+  before_script:
+    - yum install unzip wget -y
+    - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.2.0.1873-linux.zip -o /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
+    - unzip /opt/sonar-scanner-cli-4.2.0.1873-linux.zip
+    - echo "sonar.host.url=$SONAR_EXTERNAL_URL" >> /opt/sonar-scanner-cli-4.2.0.1873-linux/conf/sonar-scanner.properties
+    - export PATH=/opt/sonar-scanner-cli-4.2.0.1873-linux/bin:$PATH
+  script:
+    - |
+      sonar-scanner \
+      -Dsonar.projectKey=ops-django \
+      -Dsonar.sources=. \
+      -Dsonar.host.url=$SONAR_EXTERNAL_URL \
+      -Dsonar.login=$SONAR_LOGIN
+  allow_failure: true
+
+.sonar_check:
+  stage: static_analysis
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  variables:
+    SONAR_TOKEN: $SONAR_LOGIN
+    SONAR_HOST_URL: $SONAR_URL
+  script:
+    - sonar-scanner
+    - if [ $? -eq 0 ]; then echo "sonarqube code-publish over.";fi
+  only:
+    - merge_requests
+    - branches
+
+.static_analysis:
+  stage: static_analysis
+  image: sunnywalden.com:5000/centos7-python3.7:latest
+  before_script:
+    - pip install -r requirements.txt
+    - ln -s /usr/local/python3/bin/flake8 /usr/bin/flake8
+  script:
+    - flake8 --max-line-length=120 *.py
+#  coverage: '/^TOTAL.*\s+(\d+\%)$/'
   allow_failure: true
 
 
 
-.build:
-  stage: build
+.build_image:
+  stage: build_image
   image:
     name: sunnywalden/kaniko-executor:debug
     entrypoint: [""]
@@ -63,17 +126,19 @@ variables:
       echo "$REGISTRY_CERT" >> /kaniko/ssl/certs/ca-certificates.crt
     - echo "$REGISTRY_IP $CI_REGISTRY" >> /etc/hosts
     - |
-      echo '{
+      echo "
+      {
         "registry-mirrors": [
         "https://15gvlmjd.mirror.aliyuncs.com"
         ],
         "insecure-registries": [
-          "tezign.com"
+          "sunnywalden.com"
         ],
         "bip":"192.168.0.1/24"
-      }' >> /kaniko/.docker/daemon.json
+      }" >> /kaniko/.docker/daemon.json
+    - if [[ $CI_COMMIT_TAG ]];then echo "image $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG";fi
+    - if [[ $CI_COMMIT_TAG == "" ]];then echo "$CI_REGISTRY_IMAGE:latest";fi
   script:
-    - echo "image $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
     - if [[ $CI_COMMIT_TAG ]] && [[ $CI_COMMIT_TAG != "latest" ]];then /kaniko/executor --context $(pwd)/$CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --skip-tls-verify-registry $CI_REGISTRY;fi
     - /kaniko/executor --context $(pwd)/$CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:latest --skip-tls-verify-registry $CI_REGISTRY
   only:
@@ -104,18 +169,19 @@ variables:
           "https://15gvlmjd.mirror.aliyuncs.com"
         ],
         "insecure-registries": [
-          "tezign.com"
+          "sunnywalden.com"
         ],
         "bip":"192.169.100.1/24"
       }' >> /etc/docker/daemon.json
 
 .staging:
   stage: deploy
-  script:
+  before_script:
     - if [ $STAGING_SERVER_USER ];then SERVER_USER=$STAGING_SERVER_USER;fi
     - if [ $STAGING_SERVER_PORT ];then SERVER_PORT=$STAGING_SERVER_PORT;fi
     - if [ $STAGING_SERVER_PASS ];then SERVER_PASS=$STAGING_SERVER_PASS;fi
     - ssh -o StrictHostKeyChecking=no -p $SERVER_PORT $SERVER_USER@$STAGING_SERVER_IP "uptime"
+  script:
     - if [ $SERVER_USER != "root" ];then sudo rsync -avz -e "ssh -p $SERVER_PORT" docker-compose.yml deploy.sh $SERVER_USER@$STAGING_SERVER_IP:/home/$SERVER_USER/;else rsync -avz -e "ssh -p $SERVER_PORT" docker-compose.yml deploy.sh $SERVER_USER@$STAGING_SERVER_IP:/root/;fi
     - ssh -o StrictHostKeyChecking=no -p $SERVER_PORT -t $SERVER_USER@$STAGING_SERVER_IP "echo $SERVER_PASS | sudo -S /usr/local/bin/docker-compose pull;echo $SERVER_PASS | sudo -S /usr/local/bin/docker-compose up -d;echo $SERVER_PASS | sudo -S /bin/bash deploy.sh"
   only:
@@ -125,11 +191,12 @@ variables:
 
 .production:
   stage: deploy
-  script:
+  before_script:
     - if [ $PRODUCTION_SERVER_USER ];then SERVER_USER=$PRODUCTION_SERVER_USER;fi
     - if [ $PRODUCTION_SERVER_PORT ];then SERVER_PORT=$PRODUCTION_SERVER_PORT;fi
     - if [ $PRODUCTION_SERVER_PASS ];then SERVER_PASS=$PRODUCTION_SERVER_PASS;fi
     - ssh -o StrictHostKeyChecking=no -p $SERVER_PORT $SERVER_USER@$PRODUCTION_SERVER_IP "uptime"
+  script:
     - if [ $SERVER_USER != "root" ];then sudo rsync -avz -e "ssh -p $SERVER_PORT" docker-compose.yml deploy.sh $SERVER_USER@$PRODUCTION_SERVER_IP:/home/$SERVER_USER/;else rsync -avz -e "ssh -p $SERVER_PORT" docker-compose.yml deploy.sh $SERVER_USER@$PRODUCTION_SERVER_IP:/root/;fi
     - ssh -o StrictHostKeyChecking=no -p $SERVER_PORT -t $SERVER_USER@$PRODUCTION_SERVER_IP "echo $SERVER_PASS | sudo -S /usr/local/bin/docker-compose pull;echo $SERVER_PASS | sudo -S /usr/local/bin/docker-compose up -d;echo $SERVER_PASS | sudo -S /bin/bash deploy.sh"
   when: manual
@@ -139,6 +206,8 @@ variables:
     .docker
 
 stages:
+  - unit_test
+  - static_analysis
   - test
-  - build
+  - build_image
   - deploy

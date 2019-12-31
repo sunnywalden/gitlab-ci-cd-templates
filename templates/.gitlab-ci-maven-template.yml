@@ -5,7 +5,12 @@ variables:
   MAVEN_CLI_OPTS: "-s /root/.m2/settings.xml --batch-mode"
   MAVEN_OPTS: "-Dmaven.repo.local=/root/.m2/repository"
   POM_PATH: "backend/user"
+  GIT_CLEAN_FLAGS: "none"
   GIT_DEPTH: "3"
+  PRO_NAME: "$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"
+  SONAR_TOKEN: "$SONAR_LOGIN"
+  SONAR_HOST_URL: "$SONAR_URL"
+  SONAR_NAME: "$SONAR_NAME"
 
 cache:
   paths:
@@ -13,6 +18,17 @@ cache:
     - $POM_PATH/target/
 
 before_script:
+  - |
+    echo 'deb http://mirrors.163.com/debian/ stretch main non-free contrib
+          deb http://mirrors.163.com/debian/ stretch-updates main non-free contrib
+          deb http://mirrors.163.com/debian/ stretch-backports main non-free contrib
+          deb-src http://mirrors.163.com/debian/ stretch main non-free contrib
+          deb-src http://mirrors.163.com/debian/ stretch-updates main non-free contrib
+          deb-src http://mirrors.163.com/debian/ stretch-backports main non-free contrib
+          deb http://mirrors.163.com/debian-security/ stretch/updates main non-free contrib
+          deb-src http://mirrors.163.com/debian-security/ stretch/updates main non-free contrib' > /etc/apt/sources.list
+  - apt update
+  - apt-get install -y mysql-client
   - pwd
   - |
     echo '<?xml version="1.0" encoding="UTF-8"?>
@@ -76,12 +92,34 @@ before_script:
 
           </settings>' > /root/.m2/settings.xml
 
+
+.sonarqube_job:
+  stage: static_analysis
+  image: maven:latest
+  variables:
+    POM_PATH: "backend/user"
+#   sonarqube-scan:
+  script:
+    #   - mvn -f verify sonar:sonar
+    - mvn -f $POM_PATH/pom.xml -Dsonar.projectKey=$SONAR_NAME -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN verify sonar:sonar
+  only:
+    - merge_requests
+    - branches
+  allow_failure: true
+
+.static_analysis:
+  stage: static_analysis
+  script:
+    - flake8 --max-line-length=120 *.py
+  allow_failure: true
+  
 .build:
   stage: build
   variables:
     POM_PATH: "backend/user"
   script:
-    - mvn clean -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
+    # - mvn clean -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
+    - mvn -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
   only:
     refs:
       - tech-4.2.0
@@ -91,16 +129,23 @@ before_script:
     changes:
       - backend/user/*
 
-
-.test:
-  stage: test
+.unit_test:
+  stage: unit_test
   variables:
     POM_PATH: "backend/user"
+    APP_NAME: "user"
+    PRO_NAME: "$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME"
+  before_script:
   script:
-    - mvn clean $MAVEN_CLI_OPTS -f $POM_PATH/pom.xml test
+    - mvn $MAVEN_CLI_OPTS -f $POM_PATH/pom.xml test
     - cat $POM_PATH/target/site/jacoco/index.html
   after_script:
-    - echo "AUto CI finished"
+    - cat $POM_PATH/target/site/jacoco/index.html|grep -Eo "Total.*?([0-9]{1,3})%"|grep -Eo "([0-9]{1,3})%"|grep -Eo "([0-9]{1,3})"|head -n 1
+    - COVER_VAL=`cat $POM_PATH/target/site/jacoco/index.html|grep -Eo "Total.*?([0-9]{1,3})%"|grep -Eo "([0-9]{1,3})%"|grep -Eo "([0-9]{1,3})"| head -n 1`
+    - echo "coverage value is $COVER_VAL"
+    - echo "debug sql:\n insert into coverage_report (app_name,project_path,branch_or_tag,commit_id,ci_job_id,coverage_value) values(\"$APP_NAME\", \"$PRO_NAME\", \"$CI_COMMIT_REF_NAME\", \"$CI_COMMIT_SHORT_SHA\", \"$CI_JOB_ID\", $COVER_VAL);commit;"
+    - mysql -h $MYSQL_HOST -u $MYSQL_USER -D $MYSQL_DATABASE -p$MYSQL_PASSWORD -e "insert into $MYSQL_TABLE (app_name,project_path,branch_or_tag,commit_id,ci_job_id,coverage_value) values(\"$APP_NAME\", \"$PRO_NAME\", \"$CI_COMMIT_REF_NAME\", \"$CI_COMMIT_SHORT_SHA\", \"$CI_JOB_ID\", $COVER_VAL);commit;"
+    # - echo "AUto CI finished"
   only:
     changes:
       - backend/user/*
@@ -111,7 +156,98 @@ before_script:
       - tags
   allow_failure: true
 
+
+.pages:
+  stage: unit_test
+  variables:
+    POM_PATH: "backend/user"
+#   dependencies:
+#     - .unit_test
+  script:
+    - mkdir -p public/$POM_PATH/
+    - cp -r $POM_PATH/target/site/jacoco/* public/$POM_PATH/
+  only:
+    changes:
+      - backend/user/*
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
+  allow_failure: true
+
+.build_image:
+  stage: build_image
+  image:
+    name: sunnywalden/kaniko-executor:debug
+    entrypoint: [""]
+  before_script:
+    - |
+      echo "
+      {
+        "auths":
+          {
+            "$CI_REGISTRY":
+              {
+                "username": "$CI_REGISTRY_USER",
+                "password": "$CI_REGISTRY_PASSWORD"
+              }
+          },
+      }" > /kaniko/.docker/config.json
+    - |
+      echo "$REGISTRY_CERT" >> /kaniko/ssl/certs/ca-certificates.crt
+    - echo "10.28.204.14 sunnywalden.com" >> /etc/hosts
+    - |
+      echo "
+      {
+        "registry-mirrors": [
+        "https://15gvlmjd.mirror.aliyuncs.com"
+        ],
+        "insecure-registries": [
+          "sunnywalden.com"
+        ],
+        "bip":"192.168.0.1/24"
+      }" >> /kaniko/.docker/daemon.json
+    - if [[ $CI_COMMIT_TAG ]];then echo "image $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG";fi
+    - if [[ $CI_COMMIT_TAG == "" ]];then echo "$CI_REGISTRY_IMAGE:latest";fi
+  script:
+    - if [[ $CI_COMMIT_TAG ]] && [[ $CI_COMMIT_TAG != "latest" ]];then /kaniko/executor --context $(pwd)/$CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --skip-tls-verify-registry $CI_REGISTRY;fi
+    - /kaniko/executor --context $(pwd)/$CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:latest --skip-tls-verify-registry $CI_REGISTRY
+  only:
+    refs:
+      - master
+
+.docker:
+  image: sunnywalden/docker-with-compose:stable
+  services:
+    - docker:dind
+  variables:
+    TZ: Asia/Shanghai
+    RUN_MODE: DEPLOY
+    GIT_DEPTH: 3
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - mkdir -p /root/.ssh
+    - echo "$DEPLOY_SSH_KEY" > /root/.ssh/id_rsa.pub
+    - echo "$DEPLOY_SSH_PRI_KEY" > /root/.ssh/id_rsa
+    - chmod -R 700 /root/.ssh
+    - mkdir -p /etc/docker/certs.d/sunnywalden
+    - |
+      echo "$REGISTRY_CERT" >> /etc/docker/certs.d/sunnywalden/registry.crt
+    - echo "10.28.204.14 sunnywalden.com" >> /etc/hosts
+    - |
+      echo '{
+        "registry-mirrors": [
+          "https://15gvlmjd.mirror.aliyuncs.com"
+        ],
+        "insecure-registries": [
+          "sunnywalden.com"
+        ],
+        "bip":"192.169.100.1/24"
+      }' >> /etc/docker/daemon.json
+
 stages:
+ - static_analysis
  - build
- - test
+ - unit_test
+ - build_image
 # - deploy

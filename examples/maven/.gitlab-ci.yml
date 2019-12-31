@@ -3,64 +3,98 @@ include:
   ref: master
   file: '/templates/.gitlab-ci-maven-template.yml'
 
-build_user:
-  extends:
-    .build
-#  only:
-#    refs:
-#      - tech-4.2.0
-#      - master
-#      - merge_requests
-#      - tags
-#    changes:
-#      - backend/user/*
+variables:
+  GIT_DEPTH: "1"
+  GIT_CLEAN_FLAGS: "none"
+  MYSQL_HOST: "127.0.0.1"
+  MYSQL_DATABASE: "unit_test"
+  MYSQL_USER: "test"
+  MYSQL_PASSWORD: "123456"
 
-build_message:
+static_portfolio:
   variables:
-    POM_PATH: "backend/message"
+    POM_PATH: "backend/portfolio"
+  extends:
+    .sonarqube_job
+  only:
+    refs:
+      - tech-unit-test
+    changes:
+      - backend/portfolio/*
+
+static_top2:
+  variables:
+    POM_PATH: "backend/top"
+  extends:
+    .sonarqube_job
+  only:
+    refs:
+      - tech-unit-test
+    changes:
+      - backend/top/*
+
+build_portfolio:
+  variables:
+    POM_PATH: "backend/portfolio"
   extends:
     .build
   only:
-#    refs:
-#      - tech-4.2.0
-#      - master
-#      - merge_requests
-#      - tags
+    refs:
+      - tech-unit-test
     changes:
-      - backend/message/*
+      - backend/portfolio/*
 
-test_user:
-  extends: .test
-#  after_script:
-#    - echo "AUto CI finished"
-#  only:
-#    changes:
-#      - backend/user/*
-#    refs:
-#      - tech-4.2.0
-#      - merge_requests
-#      - master
-#      - tags
-
-test_message:
+build_top2:
   variables:
-    POM_PATH: "backend/message"
-  extends: .test
-#  after_script:
-#    - echo "AUto CI finished"
+    POM_PATH: "backend/top"
+  extends:
+    .build
+  only:
+    refs:
+      - tech-unit-test
+    changes:
+      - backend/top/*
+
+test_portfolio:
+  variables:
+    POM_PATH: "backend/portfolio"
+    APP_NAME: "portfolio"
+  extends: .unit_test
   only:
     changes:
-      - backend/message/*
-#    refs:
-#      - tech-4.2.0
-#      - merge_requests
-#      - master
-#      - tags
-#  allow_failure: true
+      - backend/portfolio/*
+    refs:
+      - tech-unit-test
 
-#deploy:
-#  stage: deploy
-#  script:
-#    - mvn $MAVEN_CLI_OPTS deploy
-#  only:
-#    - master
+test_top2:
+  variables:
+    POM_PATH: "backend/top"
+    APP_NAME: "top"
+  extends: .unit_test
+  only:
+    changes:
+      - backend/top/*
+    refs:
+      - tech-unit-test
+
+pages_portfolio:
+  variables:
+    POM_PATH: "backend/portfolio"
+  extends: .pages
+  only:
+    changes:
+      - backend/portfolio/*
+    refs:
+      - tech-unit-test
+
+pages_top2:
+  variables:
+    POM_PATH: "backend/top"
+  extends: .pages
+  only:
+    changes:
+      - backend/top/*
+    refs:
+      - tech-unit-test
+
+

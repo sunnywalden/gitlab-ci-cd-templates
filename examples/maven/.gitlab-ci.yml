@@ -1,5 +1,5 @@
 include:
-  project: 'tezign_dev/ci-templates'
+  project: 'sunnywalden/ci-templates'
   ref: master
   file: '/templates/.gitlab-ci-maven-template.yml'
 

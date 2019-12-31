@@ -97,13 +97,13 @@ before_script:
   image: maven:latest
   variables:
     POM_PATH: "backend/user"
-  sonarqube-scan:
-    script:
+#   sonarqube-scan:
+  script:
     #   - mvn -f verify sonar:sonar
-      - mvn -f $POM_PATH/pom.xml -Dsonar.projectKey=$SONAR_NAME -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN verify sonar:sonar
-    only:
-      - merge_requests
-      - branches
+    - mvn -f $POM_PATH/pom.xml -Dsonar.projectKey=$SONAR_NAME -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN verify sonar:sonar
+  only:
+    - merge_requests
+    - branches
   allow_failure: true
 
 .static_analysis:

@@ -13,3 +13,7 @@ gitlab community edition  12.2.5
 ### 使用
 
 参照examples下的用例。
+
+## 文档
+
+见项目wiki。

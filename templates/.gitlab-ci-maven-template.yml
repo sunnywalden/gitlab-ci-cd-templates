@@ -98,7 +98,6 @@ before_script:
   image: maven:latest
   variables:
     POM_PATH: "backend/user"
-#   sonarqube-scan:
   script:
     #   - mvn -f verify sonar:sonar
     - mvn -f $POM_PATH/pom.xml -Dsonar.projectKey=$SONAR_NAME -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN verify sonar:sonar
@@ -118,7 +117,6 @@ before_script:
   variables:
     POM_PATH: "backend/user"
   script:
-    # - mvn clean -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
     - mvn -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
   only:
     refs:

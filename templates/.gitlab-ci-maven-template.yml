@@ -95,21 +95,14 @@ before_script:
 
 .sonarqube_job:
   stage: static_analysis
-  image: maven:latest
   variables:
     POM_PATH: "backend/user"
   script:
     #   - mvn -f verify sonar:sonar
-    - mvn -f $POM_PATH/pom.xml -Dsonar.projectKey=$SONAR_NAME -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN verify sonar:sonar
+    - mvn -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS -Dsonar.projectKey=$SONAR_NAME -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN install
+    - mvn -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS -Dsonar.projectKey=$SONAR_NAME -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN sonar:sonar
   only:
-    - merge_requests
-    - branches
-  allow_failure: true
-
-.static_analysis:
-  stage: static_analysis
-  script:
-    - flake8 --max-line-length=120 *.py
+    - master
   allow_failure: true
   
 .build:
@@ -120,10 +113,7 @@ before_script:
     - mvn -f $POM_PATH/pom.xml $MAVEN_CLI_OPTS compile
   only:
     refs:
-      - tech-4.2.0
-      - master
-      - merge_requests
-      - tags
+      - dev
     changes:
       - backend/user/*
 
@@ -148,10 +138,7 @@ before_script:
     changes:
       - backend/user/*
     refs:
-      - tech-4.2.0
-      - merge_requests
-      - master
-      - tags
+      - dev
   allow_failure: true
 
 
@@ -167,6 +154,8 @@ before_script:
   only:
     changes:
       - backend/user/*
+    refs:
+      - dev
   artifacts:
     paths:
       - public
@@ -212,7 +201,7 @@ before_script:
     - /kaniko/executor --context $(pwd)/$CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile --destination $CI_REGISTRY_IMAGE:latest --skip-tls-verify-registry $CI_REGISTRY
   only:
     refs:
-      - master
+      - dev
 
 .docker:
   image: sunnywalden/docker-with-compose:stable

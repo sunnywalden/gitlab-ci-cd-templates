@@ -16,4 +16,4 @@ gitlab community edition  12.2.5
 
 ## 文档
 
-见项目wiki。
+见[项目wiki](https://github.com/sunnywalden/gitlab-ci-cd-templates.wiki.git)。

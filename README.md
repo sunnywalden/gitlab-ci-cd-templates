@@ -87,12 +87,12 @@ before_script:
  <servers>
  <server>
  <username>admin</username>
- <password>APAK1MQcXFpiDLyP</password>
+ <password>PASSWORD</password>
  <id>central</id>
  </server>
  <server>
  <username>admin</username>
- <password>APAK1MQcXFpiDLyP</password>
+ <password>PASSWORD</password>
  <id>snapshots</id>
  </server>
  </servers>
@@ -105,12 +105,12 @@ before_script:
  </snapshots>
  <id>central</id>
  <name>libs-release</name>
- <url>http://10.28.204.14:9099/artifactory/libs-release</url>
+ <url>http://ARTIFACTORYIP:9099/artifactory/libs-release</url>
  </repository>
  <repository>
  <id>snapshots</id>
  <name>libs-snapshot</name>
- <url>http://10.28.204.14:9099/artifactory/libs-snapshot</url>
+ <url>http://ARTIFACTORYIP:9099/artifactory/libs-snapshot</url>
  <snapshots>
  <enabled>true</enabled>
  <updatePolicy>always</updatePolicy>
@@ -218,7 +218,7 @@ before_script:
 .build_image:
  stage: build_image
  image:
- name: tezign.com:5000/kaniko-executor:debug
+ name: kaniko-executor:debug
  entrypoint: [""]
  before_script:
  - |
@@ -235,7 +235,7 @@ before_script:
  }" > /kaniko/.docker/config.json
  - |
  echo "$REGISTRY_CERT" >> /kaniko/ssl/certs/ca-certificates.crt
- - echo "10.28.204.14 tezign.com" >> /etc/hosts
+ - echo "YOURIP XXXXX.com" >> /etc/hosts
  - |
  echo "
  {
@@ -243,7 +243,7 @@ before_script:
  "https://15gvlmjd.mirror.aliyuncs.com"
  ],
  "insecure-registries": [
- "tezign.com"
+ "XXXXX.com"
  ],
  "bip":"192.168.0.1/24"
  }" >> /kaniko/.docker/daemon.json
@@ -293,7 +293,7 @@ before_script:
 
 ```
 include:
- project: 'tezign_dev/ci-templates'
+ project: 'sunnywalden/ci-templates'
  ref: master
  file: '/templates/.gitlab-ci-maven-template.yml'
 ```

@@ -124,13 +124,13 @@ before_script:
  </snapshots>
  <id>central</id>
  <name>libs-release</name>
- <url>http://10.28.204.14:9099/artifactory/libs-release</url>
+ <url>http://ARTIFACTORYIP:9099/artifactory/libs-release</url>
  </pluginRepository>
  <pluginRepository>
  <snapshots />
  <id>snapshots</id>
  <name>libs-snapshot</name>
- <url>http://10.28.204.14:9099/artifactory/libs-snapshot</url>
+ <url>http://ARTIFACTORYIP:9099/artifactory/libs-snapshot</url>
  </pluginRepository>
  </pluginRepositories>
  <id>artifactory</id>
@@ -240,7 +240,6 @@ before_script:
  echo "
  {
  "registry-mirrors": [
- "https://15gvlmjd.mirror.aliyuncs.com"
  ],
  "insecure-registries": [
  "XXXXX.com"
